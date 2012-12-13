@@ -2,3 +2,7 @@ recordedTask_cokeincup.bag
 *~
 *.tra
 ros_lfd_lat/build/*
+ros_lfd_lat/.cproject
+ros_lfd_lat/.project
+ros_lfd_lat/.pydevproject
+ros_lfd_lat/bin/*
