@@ -32,7 +32,7 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 		}
 		else
 		{
-			ROS_ERROR("size of map is bigger than the dof of the robot!");
+			ROS_ERROR("Size of map is bigger than the dof of the robot!");
 		}
 
 	}
@@ -133,27 +133,29 @@ int main(int argc, char **argv)
 				&feedbackCb
 		);
 
+		objectClient.waitForResult();
+
 		if(objectClient.getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
 		{
-			ROS_ERROR("error in object recognition");
-			ROS_ERROR("state text: %s", objectClient.getState().getText().c_str());
+			ROS_ERROR("Error in object recognition");
+			ROS_ERROR("State text: %s", objectClient.getState().getText().c_str());
 
 			return 1;
 		}
 
-		ROS_INFO("finished object recognition");
-		ROS_INFO("please press enter when you are ready to demonstrate the task");
+		ROS_INFO("Finished object recognition");
+		ROS_INFO("Please press enter when you are ready to demonstrate the task");
 
 		std::string tmp;
 		getline(std::cin, tmp);
 
-		ROS_INFO("now begin the demonstration");
+		ROS_INFO("Now begin the demonstration.");
 		std_srvs::Empty srv;
 		motorsOff.call(srv);
 
 		active = true;
 
-		ROS_INFO("press enter to end the demonstration");
+		ROS_INFO("Press enter to end the demonstration.");
 
 		getline(std::cin, tmp);
 
@@ -162,14 +164,22 @@ int main(int argc, char **argv)
 
 		trajectory.set_ndmap(map);
 		trajectories.push_back(trajectory);
+
+		ROS_INFO("Do you want to do another demonstration? (y/n)");
+		getline(std::cin, tmp);
+
+		if (tmp == "n" || tmp == "no")
+		{
+			finished = true;
+		}
 	}
 
 	bool success = lfd.save_demo(trajectories, trajectoryName);
 
 	if (success) {
-		ROS_INFO("demonstration saved successfully.");
+		ROS_INFO("Demonstration saved successfully.");
 	} else {
-		ROS_ERROR("could not save demonstration!");
+		ROS_ERROR("Could not save demonstration!");
 	}
 
 	return 0;
