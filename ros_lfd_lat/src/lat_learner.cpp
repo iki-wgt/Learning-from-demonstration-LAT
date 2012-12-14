@@ -99,9 +99,8 @@ int main(int argc, char **argv)
 	getline(std::cin, trajectoryName);
 	ROS_INFO("Selected name for trajectory: %s", trajectoryName.c_str());
 
-	// TODO here a lfd object and a deque of trajectories has to be created
-	trajectory = trajectory_lat();
-	trajectory.set_name(trajectoryName);
+	lfd lfd;
+	std::deque<trajectory_lat> trajectories;
 
 	bool finished = false;
 	while(ros::ok() && !finished)
@@ -122,6 +121,8 @@ int main(int argc, char **argv)
 		}
 
 		ROS_INFO("Selected name for the demo: %s", demoName.c_str());
+		trajectory = trajectory_lat();
+		trajectory.set_name(demoName);
 		map.set_name(demoName);
 
 		// get objects
@@ -159,11 +160,17 @@ int main(int argc, char **argv)
 		active = false;
 		motorsOn.call(srv);
 
-		// TODO add trajectory to deque
 		trajectory.set_ndmap(map);
+		trajectories.push_back(trajectory);
 	}
 
-	// TODO call save_demo
+	bool success = lfd.save_demo(trajectories, trajectoryName);
+
+	if (success) {
+		ROS_INFO("demonstration saved successfully.");
+	} else {
+		ROS_ERROR("could not save demonstration!");
+	}
 
 	return 0;
 }

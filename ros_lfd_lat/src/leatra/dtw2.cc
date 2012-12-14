@@ -50,7 +50,7 @@ void warp::normalize_path_for_y(){
  */
 std::deque< int > warp::get_path_x(){
   std::deque< int > _x;
-  for(int i=0; i < path.size(); i++){
+  for(unsigned int i=0; i < path.size(); i++){
     _x.push_back(path[i].x);
   }
   return _x;
@@ -61,7 +61,7 @@ std::deque< int > warp::get_path_x(){
  */
 std::deque< int > warp::get_path_y(){
   std::deque< int > _y;
-  for(int i=0; i < path.size(); i++){
+  for(unsigned int i=0; i < path.size(); i++){
     _y.push_back(path[i].y);
   }
   return _y;
@@ -94,7 +94,7 @@ bool warp::D_acc_consistency_check(){
 
   if(D_acc.size() != y.size()) return false;
 
-  for(int i=0; i < D_acc.size(); i ++){
+  for(unsigned int i=0; i < D_acc.size(); i ++){
     if(D_acc[i].size() != x.size()) return false;
   }
   return true;
@@ -104,7 +104,7 @@ bool warp::D_consistency_check(){
 
   if(D.size() != y.size()) return false;
 
-  for(int i=0; i < D.size(); i ++){
+  for(unsigned int i=0; i < D.size(); i ++){
     if(D[i].size() != x.size()) return false;
   }
   return true;
@@ -161,7 +161,7 @@ void warp::make_distance_matrix_slope(){
     y.pop_front();
     _D.pop_front();
     _D.pop_back();
-    for(int j=0; j < _D.size(); j++){
+    for(unsigned int j=0; j < _D.size(); j++){
       _D[j].pop_front();
       _D[j].pop_back();
     }
@@ -282,7 +282,7 @@ void warp::accumulate_distance_matrix_step_size_cond2(){
   // Remove first row
   D_acc.pop_front();
   // Remove first column
-  for(int i=0; i < D_acc.size(); i++){
+  for(unsigned int i=0; i < D_acc.size(); i++){
     D_acc[i].pop_front();
   }
 }
@@ -520,7 +520,7 @@ std::deque< tuple > warp::get_path(){
 
 void warp::print_path(){
   std::cout<<"* Warping path: "<<std::endl;
-  for(int i=0; i < path.size(); i++){
+  for(unsigned int i=0; i < path.size(); i++){
     std::cout << "* x: " << path[i].x << "* y: " << path[i].y << std::endl;
   }
 }
@@ -626,7 +626,7 @@ double warp::get_path_costs(){
 
 double warp::path_cost(){
   double cost = 0;
-  for(int i=0; i < path.size(); i++){
+  for(unsigned int i=0; i < path.size(); i++){
     cost += D[path[i].y][path[i].x];
   }
   path_costs = cost;
