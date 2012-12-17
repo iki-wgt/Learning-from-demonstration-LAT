@@ -6,3 +6,5 @@ ros_lfd_lat/.cproject
 ros_lfd_lat/.project
 ros_lfd_lat/.pydevproject
 ros_lfd_lat/bin/*
+ros_lfd_lat/html/*
+ros_lfd_lat/latex/*

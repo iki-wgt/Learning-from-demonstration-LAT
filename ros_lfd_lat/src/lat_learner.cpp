@@ -8,7 +8,6 @@ int demoCount = 0;
 ndmap map;
 trajectory_lat trajectory;
 
-
 void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
 	if(active)
@@ -68,7 +67,6 @@ void feedbackCb(
 {
 
 }
-
 
 
 int main(int argc, char **argv)

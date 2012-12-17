@@ -1395,10 +1395,3 @@ void init(){
   sets_exist = 0;
   groups_exist = 0;
 }
-
-
-
-/**     \mainpage LEATRA
-
-        To get an overview, on what Leatra does, please read the documentation Leatra_Project.pdf in the leatra/documentation directory.
-*/

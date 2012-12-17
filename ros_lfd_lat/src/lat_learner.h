@@ -21,5 +21,62 @@
 
 typedef actionlib::SimpleActionClient<object_recognition_msgs::ObjectRecognitionAction> Or_Client;
 
+/**
+ * \brief Callback function for the joint state listener.
+ *
+ * Pure callback function. Do not call it by yourself.
+ * This function only does its stuff, if the active variable is set to true.
+ *
+ * @param jointState The message containing the joint states.
+ */
+void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState);
+
+/**
+ * \brief Callback function for the object recognition.
+ *
+ * Pure callback function for an actionlib goal. Do not call it by yourself.
+ *
+ * @param state actionlib goal state
+ * @param result Message containing the recognized objects and their positions.
+ */
+void objectCallback(const actionlib::SimpleClientGoalState& state,
+		const object_recognition_msgs::ObjectRecognitionResultConstPtr& result);
+
+/**
+ * Callback function for the actionlib event "goal went active".
+ */
+void activeCb();
+
+/**
+ * Callback for the actionlib feedback. Not in use.
+ *
+ * @param feedback Feedback of the action.
+ */
+void feedbackCb(
+		const object_recognition_msgs::ObjectRecognitionFeedbackConstPtr& feedback);
+
+/**
+ * \brief Main routine for learning trough averaging.
+ *
+ * In this program the user is asked for a name of the trajectory and of each
+ * demo. As many demos are recorded as the user wishes.
+ *
+ * @param argc
+ * @param argv
+ * @return
+ */
+int main(int argc, char **argv);
+
+/**
+ * \mainpage ros_lfd_lat
+ *
+ * This project provides a ROS stack for teaching a robot through averaging trajectories.
+ *
+ * This project is based on the bachelor-thesis of Heiko Posenauer and his program Leatra.
+ *
+ * The targeted ROS distribution is Fuerte. The used arms are the Katana and the Powerball.
+ *
+ * As a dependecy Eigen3 has to be located in /usr/local/include.
+ */
 
 #endif
