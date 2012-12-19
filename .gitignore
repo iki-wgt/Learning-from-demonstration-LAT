@@ -8,3 +8,9 @@ ros_lfd_lat/.pydevproject
 ros_lfd_lat/bin/*
 ros_lfd_lat/html/*
 ros_lfd_lat/latex/*
+forward_kinematics_publisher/build/*
+forward_kinematics_publisher/.cproject
+forward_kinematics_publisher/.project
+forward_kinematics_publisher/.pydevproject
+forward_kinematics_publisher/bin/*
+forward_kinematics_publisher/.settings/*

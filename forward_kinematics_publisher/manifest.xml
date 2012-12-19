@@ -1,0 +1,20 @@
+<package>
+  <description brief="forward_kinematics_publisher">
+
+     forward_kinematics_publisher
+
+  </description>
+  <author>Benny</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/forward_kinematics_publisher</url>
+  <depend package="kdl"/>
+  <depend package="orocos_kdl"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="kdl_parser"/>
+
+</package>
+
+
