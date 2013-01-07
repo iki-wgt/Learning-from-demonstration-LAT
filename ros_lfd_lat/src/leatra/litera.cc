@@ -211,6 +211,7 @@ std::deque< trajectory_lat > litera::read_trajectories(std::string rule_file, st
   int read_stage = 1;
 			// read_stage = 1: read trajectory ndmap.
 			// read_stage = 2: read objects.
+
   if (rFile.is_open()) {
 
     while (getline(rFile, line,'\n')) { 		// interprete input!
@@ -248,8 +249,10 @@ std::deque< trajectory_lat > litera::read_trajectories(std::string rule_file, st
       }
     }
     rFile.close();
+
   }
   else throw data_error(path, -21);
+
   return trajectories;			//Error: File couldn't be opened.     
 }
 

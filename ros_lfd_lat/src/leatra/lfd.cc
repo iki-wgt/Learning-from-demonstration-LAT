@@ -59,20 +59,22 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   litera lit;
   std::deque< trajectory_lat > JS;
   
+  //TODO: Eventually not needed with the fake object recognition
   // bringing new objects in Katana Coordinate System:
-  for(int i = 0; i < obj.size(); i++){
+  /*for(int i = 0; i < obj.size(); i++){
     obj[i].subtract_kate_offset();
-  }
+  }*/
 
   std::cout << "[Leatra reproduce] reading trajectories from the file: " << path << task_name << std::endl;
   
   // Reading trajectories from file
   JS = lit.read_trajectories( task_name, path );
 
+  //TODO: Eventually not needed with the fake object recognition
   // bringing objects in trajectories in Katana Coordinate System:
-  for(int i = 0; i < JS.size(); i++){
+  /*for(int i = 0; i < JS.size(); i++){
     JS[i].subtract_kate_offset();
-  }
+  }*/
   
   // Sorting objects!
   for(int i = 0; i < JS.size(); i++){
