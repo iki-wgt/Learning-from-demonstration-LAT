@@ -4,28 +4,41 @@ std::string trajectoryName = "default_trajectory_name";
 std::string demoName = "default_demo_name";
 std::string dirName = "default_dir_name";
 bool active = false;
+bool continueProgramm = false;
 int demoCount = 0;
 ndmap map;
 trajectory_lat trajectory;
+
+void waitForEnter()
+{
+	continueProgramm = false;
+	std::string tmp;
+	getline(std::cin, tmp);
+
+	continueProgramm = true;
+}
 
 void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
 	if(active)
 	{
 		int dof = jointState->position.size();
-
 		// check if all deques have already been created
 		if (dof == map.get_dim())
 		{
+			std::deque<double> point;
 			for (int i = 0; i < dof; ++i)
 			{
-				map.get_row(i).push_back(jointState->position[i]);
+				//map.get_row(i).push_back(jointState->position[i]);	// does not work
+				point.push_back(jointState->position[i]);
 			}
+			map.push_back(point);
 		}
 		else if (dof > map.get_dim())
 		{
 			while (dof > map.get_dim())
 			{
+				ROS_DEBUG("Adding deque to map");
 				map.add_deque(std::deque<double>());
 			}
 		}
@@ -155,10 +168,28 @@ int main(int argc, char **argv)
 
 		ROS_INFO("Press enter to end the demonstration.");
 
-		getline(std::cin, tmp);
+		//getline(std::cin, tmp);	does not work blocks the callbacks!
+		continueProgramm = false;
+		boost::thread waitThread = boost::thread(waitForEnter);
+		ros::Rate rate(20);
+		while (!continueProgramm && ros::ok())
+		{
+			ros::spinOnce();		// pumps the callbacks
+			rate.sleep();
+		}
+		waitThread.join();
+
 
 		active = false;
 		motorsOn.call(srv);
+
+		/*for (int i = 0; i < map.get_dim(); ++i) {
+			std::deque<double> row = map.get_row(i);
+
+			for (unsigned int j = 0; j < row.size(); ++j) {
+				ROS_INFO("row: %i, column: %i, value %f", i, j, row.at(j));
+			}
+		}*/
 
 		trajectory.set_ndmap(map);
 		trajectories.push_back(trajectory);

@@ -15,6 +15,7 @@
 #include <iostream>
 #include <sstream>
 #include <deque>
+#include <boost/thread.hpp>
 
 #include "leatra/lfd.hh"
 #include "leatra/stringhelp.hh"

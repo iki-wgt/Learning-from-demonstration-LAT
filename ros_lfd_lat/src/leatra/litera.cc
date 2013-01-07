@@ -3,20 +3,20 @@
 // path needs to end with a slash /
 
 bool litera::write_trajectories(std::deque< trajectory_lat > tra, std::string rule_file, std::string path){
-    
   // Create a folder for the task:  
   if( 0 != system(("mkdir " + path + rule_file + ".tra").c_str())) return false;
-     
     
-  for(int i=0; i < tra.size(); i++){
+  for(unsigned int i=0; i < tra.size(); i++){
     
     // Write data to file    
     if(write_ndmap(tra[i].get_ndmap(), path + rule_file + ".tra" + "/", tra[i].get_name()) != 0){ 
-      //std::cout<<"Stelle i = "<<i<<" subfolder: "<< subfolder <<" name: "<<set.set[i].get_name()<<"\n"; 
+      //std::cout<<"Stelle i = "<<i<<" subfolder: "<< subfolder <<" name: "<<set.set[i].get_name()<<"\n";
       return false; // Error while writing
-    } 
+    }
+
     // Add information to rule file:  
-    if(! rules_add_tra(tra[i].get_name() ,tra[i].get_objects(), rule_file, path)) return false;  
+    if(! rules_add_tra(tra[i].get_name() ,tra[i].get_objects(), rule_file, path)) return false;
+
   }
   return true;
 }
@@ -28,7 +28,7 @@ bool litera::rules_add_tra(std::string name, std::deque< object > obj, std::stri
   wFile.open(path.c_str(), std::ios::app);
   if(wFile.is_open()){
     wFile<< name <<"\n";
-    for(int i=0; i < obj.size(); i++){ 
+    for(unsigned int i=0; i < obj.size(); i++){
       wFile << obj[i].get_name() <<"(";
       for(int j=0; j < obj[i].get_num_of_coordinate(); j++){
         wFile << obj[i].get_coordinate(j);
@@ -74,7 +74,10 @@ int litera::write_ndmap(ndmap map, std::string subfolder, std::string name){
   el = map.map_is_consistent();
   dim = map.get_dim();
   
-  if(map.map_is_consistent() <= 0) return -2;		//return -2: The map to be written isn't consistent or is empty
+  if(map.map_is_consistent() <= 0)
+  {
+	  return -2;		//return -2: The map to be written isn't consistent or is empty
+  }
   
   if (wFile.is_open()) {
 
@@ -97,6 +100,8 @@ int litera::write_ndmap(ndmap map, std::string subfolder, std::string name){
 int litera::write_ndmap(ndmap map){
   if(0 != system(("mkdir " + map.get_name()).c_str())) throw data_error(map.get_name(), -41);               //File exists!  
   write_ndmap(map, map.get_name() + "/", map.get_name());
+
+  return 0;		// added because compiler complained BR
 }
 
 /**
@@ -104,7 +109,7 @@ int litera::write_ndmap(ndmap map){
  */
 int litera::write_ndmapSet(ndmapSet set, std::string subfolder){
 
-  for(int i=0; i < set.set.size(); i++){
+  for(unsigned int i=0; i < set.set.size(); i++){
     if(write_ndmap(set.set[i], subfolder + ".mod" +"/", set.set[i].get_name()) != 0){ 
         std::cout<<"Stelle i = "<<i<<" subfolder: "<< subfolder <<" name: "<<set.set[i].get_name()<<"\n"; return -1; // Error while writing
     }           
@@ -119,7 +124,9 @@ int litera::write_ndmapSet(ndmapSet set, std::string subfolder){
  */
 int litera::write_ndmapSet(ndmapSet set){
   if( 0 != system(("mkdir " + set.get_name() + ".mod").c_str())) throw data_error(set.get_name(), -41);                //File exists!  
-  write_ndmapSet(set, set.get_name());    
+  write_ndmapSet(set, set.get_name());
+
+  return 0;		// added because compiler complained BR
 }
 
 /**
@@ -174,7 +181,7 @@ int litera::write_all(ndmapSetGroup group, std::string path){
     for(int s = 0; s < sets; s++){
       std::string name = "d" + intTOstring(d) + "s" + intTOstring(s);
       ndmap map;
-      for(int i = 0; i < group.group[s].set.size(); i++) map.add_deque(group.group[s].set[i].map[d]);
+      for(unsigned int i = 0; i < group.group[s].set.size(); i++) map.add_deque(group.group[s].set[i].map[d]);
       map.set_name(name);
       ret = write_ndmap(map, path, name);
     }   
@@ -220,7 +227,7 @@ std::deque< trajectory_lat > litera::read_trajectories(std::string rule_file, st
           read_stage--;
           int pos1 = 0;
           int pos2 = 0;
-          while(pos2 < line.size()){
+          while(pos2 < (int)line.size()){
             pos2 = line.find("(", pos1); 
             if(pos2 == -1) pos2 = line.size();
             else {
@@ -258,7 +265,7 @@ std::deque< double > litera::parse_coordinates(std::string line){
   int pos1 = 0;
   int pos2 = 0;
  
-   while(pos2 < line.size()){
+   while(pos2 < (int)line.size()){
     pos2 = line.find(",", pos1);
     if(pos2 == -1) pos2 = line.size();
     else{
@@ -298,7 +305,7 @@ std::deque< object > litera::read_objects(std::string object_file){
 
     int pos1 = 0;
     int pos2 = 0;
-    while(pos2 < line.size()){
+    while(pos2 < (int)line.size()){
       pos2 = line.find("(", pos1); 
       if(pos2 != -1){
         obj.set_name(line.substr(pos1,pos2 - pos1));
@@ -329,7 +336,7 @@ ndmap litera::read_ndmap(std::string subfolder, std::string f_name){
   int dim = -1;
   
   m.name = f_name;
-  int ret = -1;
+  //int ret = -1;
   std::string path = subfolder + "/" + f_name;
   std::string line;
   std::ifstream rFile;
@@ -367,7 +374,7 @@ ndmap litera::read_ndmap(std::string subfolder, std::string f_name){
         it++;
       }
     }
-    for(int i = 0; i < dlist.size(); i++) m.add_deque( dlist[i] );
+    for(unsigned int i = 0; i < dlist.size(); i++) m.add_deque( dlist[i] );
     rFile.close();
     return m;
   }
@@ -445,7 +452,7 @@ ndmapSetGroup litera::read_group(std::string rule_file){
           read_stage--;
           int pos1 = 0;
           int pos2 = 0;
-          while(pos2 < line.size()){
+          while(pos2 < (int)line.size()){
             pos2 = line.find(";", pos1); 
             if(pos2 == -1) pos2 = line.size();
             else {

@@ -1,0 +1,18 @@
+<package>
+  <description brief="fake_or">
+
+     fake_or
+
+  </description>
+  <author>Benny</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/fake_or</url>
+  <depend package="rospy"/>
+  <depend package="object_recognition_msgs"/>
+  <depend package="actionlib"/>
+  <depend package="actionlib_msgs"/>
+
+</package>
+
+

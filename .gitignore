@@ -14,3 +14,9 @@ forward_kinematics_publisher/.project
 forward_kinematics_publisher/.pydevproject
 forward_kinematics_publisher/bin/*
 forward_kinematics_publisher/.settings/*
+fake_or/build/*
+fake_or/.cproject
+fake_or/.project
+fake_or/.pydevproject
+fake_or/bin/*
+fake_or/.settings/*
