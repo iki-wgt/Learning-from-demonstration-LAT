@@ -98,7 +98,7 @@ int litera::write_ndmap(ndmap map, std::string subfolder, std::string name){
  *  The public method write_ndmap, calls the private method and sets the folder name to the map name.
  */
 int litera::write_ndmap(ndmap map){
-  if(0 != system(("mkdir " + map.get_name()).c_str())) throw data_error(map.get_name(), -41);               //File exists!  
+  if(0 != system(("mkdir -p " + map.get_name()).c_str())) throw data_error(map.get_name(), -41);               //File exists!
   write_ndmap(map, map.get_name() + "/", map.get_name());
 
   return 0;		// added because compiler complained BR
@@ -123,7 +123,7 @@ int litera::write_ndmapSet(ndmapSet set, std::string subfolder){
  *      and calls the related method write_ndmapSet with the string parameter for the subfolder.
  */
 int litera::write_ndmapSet(ndmapSet set){
-  if( 0 != system(("mkdir " + set.get_name() + ".mod").c_str())) throw data_error(set.get_name(), -41);                //File exists!  
+  if( 0 != system(("mkdir -p " + set.get_name() + ".mod").c_str())) throw data_error(set.get_name(), -41);                //File exists!
   write_ndmapSet(set, set.get_name());
 
   return 0;		// added because compiler complained BR
