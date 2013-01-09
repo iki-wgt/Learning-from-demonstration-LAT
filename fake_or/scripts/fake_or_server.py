@@ -19,6 +19,17 @@ object position: x y z
 
 class RecognitionServer:
     def __init__(self):
+        
+        self.positions = [[0.344, 0.237, 0.3], 
+                          [0.465, 0.24, 0.3], 
+                          [0.553, -0.099, 0.3],
+                          [0.424, -0.13, 0.3]]
+        
+        posCup = 1
+        posCoke = 3
+        
+        posCup = posCup - 1
+        posCoke = posCoke - 1
        
         #the results for the object recognition pipeline
         self.result = ObjectRecognitionResult()
@@ -28,9 +39,9 @@ class RecognitionServer:
         robj.id.id = "IKEA-CUP-SOLBRAEND-BLUE"
         robj.pose.header.stamp = rospy.Time.now()
         robj.pose.header.frame_id = "base_link"
-        robj.pose.pose.pose.position.x = 0.344
-        robj.pose.pose.pose.position.y = 0.237
-        robj.pose.pose.pose.position.z = 0.3
+        robj.pose.pose.pose.position.x = self.positions[posCup][0]
+        robj.pose.pose.pose.position.y = self.positions[posCup][1]
+        robj.pose.pose.pose.position.z = self.positions[posCup][2]
         robj.pose.pose.pose.orientation.x = 0
         robj.pose.pose.pose.orientation.y = 0
         robj.pose.pose.pose.orientation.z = 0
@@ -43,9 +54,9 @@ class RecognitionServer:
         robj.id.id = "COCA-COLA-CAN-250ML"
         robj.pose.header.stamp = rospy.Time.now()
         robj.pose.header.frame_id = "base_link"
-        robj.pose.pose.pose.position.x = 0.553
-        robj.pose.pose.pose.position.y = -0.099
-        robj.pose.pose.pose.position.z = 0.3
+        robj.pose.pose.pose.position.x = self.positions[posCoke][0]
+        robj.pose.pose.pose.position.y = self.positions[posCoke][1]
+        robj.pose.pose.pose.position.z = self.positions[posCoke][2]
         robj.pose.pose.pose.orientation.x = 0
         robj.pose.pose.pose.orientation.y = 0
         robj.pose.pose.pose.orientation.z = 0

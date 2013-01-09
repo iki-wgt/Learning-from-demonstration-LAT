@@ -22,7 +22,8 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
 	if(active)
 	{
-		int dof = jointState->position.size();
+		// Only one angle from the gripper can be processed by leatra
+		int dof = jointState->position.size() - 1;		// TODO: Fix this problem in leatra
 		// check if all deques have already been created
 		if (dof == map.get_dim())
 		{
@@ -34,7 +35,7 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 			}
 			map.push_back(point);
 		}
-		else if (dof > map.get_dim())
+		else if (dof > map.get_dim())	// not all deque have been created
 		{
 			while (dof > map.get_dim())
 			{

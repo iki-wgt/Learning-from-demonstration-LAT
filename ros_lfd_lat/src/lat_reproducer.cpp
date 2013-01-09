@@ -96,6 +96,14 @@ int main(int argc, char **argv)
 			// compute the trajecotry
 			std::deque< std::deque< double > > reproducedTrajectory;
 			reproducedTrajectory = lfd.reproduce(objects, trajectoryName, "/home/benny/");
+
+			ROS_INFO("length: %i", reproducedTrajectory.size());
+			for (int i = 0; i < reproducedTrajectory[0].size(); ++i) {
+				for (int j = 0; j < reproducedTrajectory.size(); ++j) {
+					std::cout << reproducedTrajectory.at(j).at(i) << "\t";
+				}
+				std::cout << std::endl;
+			}
 		}
 		else
 		{

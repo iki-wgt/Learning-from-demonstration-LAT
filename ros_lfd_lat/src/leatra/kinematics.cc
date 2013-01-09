@@ -222,9 +222,11 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
   nan_count = 0;
 
   // test if all measures are as expected:
+  std::cout << "TM->size() " << TM->size() << " TS->size() " << TS->size() << " JM->size() " << JM->size() << " JS->size() " << TM->size() << std::endl;
   if((TM->size() != 3 || TS->size() != 3) ||(JM->size() != 6 || JS->size() != 6)) return false;
+
   if(LAT->size() != 6) return false;
-  
+
   unsigned int tra_size = (*TM)[0].size();
   for(unsigned int i = 0; i < TM->size(); i++){
     if((*TM)[i].size() != tra_size)return false;
@@ -250,7 +252,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
   for(int i = 0; i < 6; i++){
     (*LAT)[i].push_back( (*JM)[i][0] );
   }
-
+  std::cout << "still in optimize_TJ" << std::endl;
   // Having the first point of the new trajectory set above, now all the other points
   // are calculated in the loop below:
   for(unsigned int i = 1; i < tra_size; i++){
