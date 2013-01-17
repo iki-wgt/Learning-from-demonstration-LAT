@@ -1,6 +1,18 @@
 #include "leatra.hh"
 #include <boost/lexical_cast.hpp>
 
+// include these headers to switch from leatra direct kinematics to kdl
+#include "ros/ros.h"
+#include <kdl/chain.hpp>
+#include <kdl/chainfksolver.hpp>
+#include <kdl/chainfksolverpos_recursive.hpp>
+#include <kdl/frames_io.hpp>
+#include <kdl_parser/kdl_parser.hpp>
+#include <kdl/tree.hpp>
+#include <kdl/treefksolver.hpp>
+#include <kdl/treefksolverpos_recursive.hpp>
+#include <kdl/utilities/utility.h>
+
 
 /**
  *      The global variables maps_exist, sets_exist and groups_exist are used
@@ -846,8 +858,8 @@ void ndmap::smoothing(double sigma){
 
 double ndmap::area_gauss(double sigma, double x1, double x2){
   double F1, F2;
-  F1 = (1/(sigma * sqrt(2* PI ))) * exp(-0.5*((x1/sigma) * (x1/sigma)));
-  F2 = (1/(sigma * sqrt(2* PI ))) * exp(-0.5*((x2/sigma) * (x2/sigma)));
+  F1 = (1/(sigma * sqrt(2* KDL::PI ))) * exp(-0.5*((x1/sigma) * (x1/sigma)));
+  F2 = (1/(sigma * sqrt(2* KDL::PI ))) * exp(-0.5*((x2/sigma) * (x2/sigma)));
   return (((F1-F2)/2) + F2) * fabs(x1-x2);
 }
 
@@ -935,7 +947,11 @@ bool ndmap::joint_to_task_space(){
 
   int dim = get_dim();
 
-  if( dim < 5 ){
+  std::deque< double > init;
+  std::deque< std::deque<double> > task_space(3 ,init); // Three dimensions for x,y,z
+
+  // switch from leatra DK to KDL DK
+  /*if( dim < 5 ){
     std::cout<<"[NDMAP] joint_to_task_space: at least 5 dimensions expected!"<<std::endl;
     return false;
   }
@@ -961,6 +977,43 @@ bool ndmap::joint_to_task_space(){
     for(unsigned int j=0; j < X.size(); j++){
       task_space[j].push_back(X[j]);
     }
+  }*/
+
+  KDL::Tree my_tree;
+
+  // set up robot description
+  std::string robot_desc_string;
+  ros::param::get("robot_description", robot_desc_string);
+  if (!kdl_parser::treeFromString(robot_desc_string, my_tree)){
+  	ROS_ERROR("Failed to construct kdl tree");
+  	return 1;
+  }
+
+  // Create solver based on kinematic tree
+  KDL::TreeFkSolverPos_recursive fksolver = KDL::TreeFkSolverPos_recursive(my_tree);
+
+  // for every captured joint state
+  for(int i=0; i < el; i++){
+	  KDL::JntArray jointpositions = KDL::JntArray(dim);
+
+	  for (int j = 0; j < dim; ++j) {
+		jointpositions(j) = map[j][i];
+	  }
+
+	  // Create the frame that will contain the results
+	  KDL::Frame cartpos;
+
+	  // Calculate forward position kinematics
+	  bool kinematics_status;
+	  kinematics_status = fksolver.JntToCart(jointpositions,cartpos, "katana_gripper_tool_frame");	// TODO: Katana specific
+	  if(kinematics_status>=0){
+		  // success now copy the result
+		  for(unsigned int j=0; j < 3; j++){
+			  task_space[j].push_back(cartpos.p[j]);
+		  }
+	  }else{
+		  ROS_ERROR("Could not calculate forward kinematics!");
+	  }
   }
 
   map = task_space;

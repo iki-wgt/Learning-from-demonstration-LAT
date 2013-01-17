@@ -17,6 +17,9 @@ As a dependecy Eigen3 has to be located in /usr/local/include.
   <depend package="geometry_msgs"/>
   <depend package="sensor_msgs"/>
   <depend package="object_recognition_msgs"/>
+  <depend package="kdl"/>
+  <depend package="orocos_kdl"/>
+  <depend package="kdl_parser"/>
 
 </package>
 

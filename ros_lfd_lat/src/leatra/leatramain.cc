@@ -263,7 +263,7 @@ int test(){
   std::cout << " Hello I am here!!!!" << std::endl;
   lit.write_ndmap(map);
   
-  
+  return 1;
 }
 
 
@@ -376,7 +376,7 @@ int main( int argc, const char* argv[] ){
       case 3: 
         level = 4;
         if( input == "-sm") {command = 5; break;}
-
+        continue;
       case 4:
         if( input == "-r" ) {command = 2; level = 5; }
         else command = -1;
@@ -449,7 +449,7 @@ int main( int argc, const char* argv[] ){
           return 0;
       }    
     }
-    catch(data_error err){
+    catch(data_error& err){
       return err.print();
     }
   }
