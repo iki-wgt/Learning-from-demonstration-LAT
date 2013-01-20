@@ -73,16 +73,16 @@ Matrix<double, 3, 4> Jacobi_lat_s(Matrix<double, 4, 1> theta){
   return J;
 }
 
-Matrix<double, 4, 3> Jpinv_s(Matrix<double, 3, 4> J){
+Matrix<double, Eigen::Dynamic, 6> Jpinv_s(Matrix<double, 6, Eigen::Dynamic> J){
     
   JacobiSVD<MatrixXd> svd(J, ComputeFullU | ComputeFullV);
   svd.computeU();	
   svd.computeV();	
 
-  Matrix<double, 3, 3> U;
-  Matrix<double, 4, 4> V;
-  Matrix<double, 1, 3> _S;
-  Matrix<double, 4, 3> S = Matrix<double, 4, 3>::Zero();
+  Matrix<double, 6, 6> U;
+  Matrix<double, Eigen::Dynamic, Eigen::Dynamic> V;
+  Matrix<double, 1, 6> _S;
+  Matrix<double, Eigen::Dynamic, 6> S = Matrix<double, Eigen::Dynamic, 6>::Zero(J.cols(), 6);
   
   U = svd.matrixU();
   V = svd.matrixV();
@@ -90,6 +90,9 @@ Matrix<double, 4, 3> Jpinv_s(Matrix<double, 3, 4> J){
   S(0,0) = 1 / _S(0);
   S(1,1) = 1 / _S(1);
   S(2,2) = 1 / _S(2);
+  S(3,3) = 1 / _S(3);
+  S(4,4) = 1 / _S(4);
+  S(5,5) = 1 / _S(5);
 
   return V * S * U.transpose();
 }
@@ -216,112 +219,139 @@ Matrix<double, 3, 1>  DK_lat(Matrix<double, 4, 1>  angles){
  *      JS: standard deviation of the joint space trajectory
  */
 bool optimize_TJ(std::deque< std::deque<double> >* LAT,
-                std::deque< std::deque<double> >*  TM, std::deque< std::deque<double> >* TS ,
-                std::deque< std::deque<double> >*  JM, std::deque< std::deque<double> >* JS){
+		std::deque< std::deque<double> >*  TM, std::deque< std::deque<double> >* TS ,
+		std::deque< std::deque<double> >*  JM, std::deque< std::deque<double> >* JS){
 
-  nan_count = 0;
-
-  // test if all measures are as expected:
-  std::cout << "TM->size() " << TM->size() << " TS->size() " << TS->size() << " JM->size() " << JM->size() << " JS->size() " << TM->size() << std::endl;
-  if((TM->size() != 3 || TS->size() != 3) ||(JM->size() != 6 || JS->size() != 6)) return false;
-
-  if(LAT->size() != 6) return false;
-
-  unsigned int tra_size = (*TM)[0].size();
-  for(unsigned int i = 0; i < TM->size(); i++){
-    if((*TM)[i].size() != tra_size)return false;
-    if((*TS)[i].size() != tra_size)return false;
-  }
-
-  for(unsigned int i = 0; i < JM->size(); i++){
-    if((*JM)[i].size() != tra_size)return false;
-    if((*JS)[i].size() != tra_size)return false;
-  }
-
-  
-  int limit_violation = 0;
-  Matrix<double, 4,2> limit;
+	nan_count = 0;
+	unsigned int tra_size = (*TM)[0].size();
+	unsigned int dofs = JM->size();
+	int limit_violation = 0;
+	/*Matrix<double, 4,2> limit;	//TODO: these limits have to be read out of the robot description
   limit <<   0.12, 6.15,
 	    -0.20, 2.15,
              0.93, 5.34,
-             1.12, 5.15;
-  
-  // from here on, all trajectories have the correct dimensions.
-	     
-  // the first point in the new trajectory is the first mean of JM
-  for(int i = 0; i < 6; i++){
-    (*LAT)[i].push_back( (*JM)[i][0] );
-  }
-  std::cout << "still in optimize_TJ" << std::endl;
-  // Having the first point of the new trajectory set above, now all the other points
-  // are calculated in the loop below:
-  for(unsigned int i = 1; i < tra_size; i++){
+             1.12, 5.15;*/
 
-    // initializing all joint space variables:
-    Matrix<double, 4, 1> theta_old;
-    Matrix<double, 4, 1> d_theta;
+	// from here on, all trajectories have the correct dimensions.
 
-    for(int j = 0; j < 4; j++){
-      theta_old(j) = (*LAT)[j][i-1];  
-      d_theta(j) = (*JM)[j][i] - (*LAT)[j][i-1];
-    }
-    
-    // initializing all task space variables:
-    Matrix<double, 3, 1> d_x;
+	// the first point in the new trajectory is the first mean of JM
+	for(unsigned int i = 0; i < dofs; i++){
+		(*LAT)[i].push_back( (*JM)[i][0] );
+	}
+	std::cout << "still in optimize_TJ" << std::endl;
+	// Having the first point of the new trajectory set above, now all the other points
+	// are calculated in the loop below:
+	for(unsigned int i = 1; i < tra_size; i++){
 
-   Matrix<double, 3, 1> x_old;
-   x_old = DK_lat(theta_old);
-    
-    for(int j = 0; j < 3; j++){    
-      d_x(j) = (*TM)[j][i] - x_old(j);
-    }
+		// initializing all joint space variables:
+		VectorXd theta_old(dofs);
+		VectorXd d_theta(dofs);
 
-    Matrix<double, 3, 4> J;
-    J = Jacobi_lat_s(theta_old);
-    
-    Matrix<double, 4, 3> Jinv;
-    Jinv = Jpinv_s(J);
-    
-    Matrix<double, 4, 4> I = Matrix<double, 4, 4>::Identity();
-    
-    Matrix<double, 4, 1> theta_new;
-    
-    Matrix<double, 4, 4> alpha = Matrix<double, 4, 4>::Identity();
-    
-    //std::cout << alpha <<std::endl;
+		for(unsigned int j = 0; j < dofs; j++){
+			theta_old(j) = (*LAT)[j][i-1];
+			d_theta(j) = (*JM)[j][i] - (*LAT)[j][i-1];
+		}
 
-    theta_new =  theta_old + Jinv * d_x + alpha * ((I - (Jinv * J)) * d_theta);
+		KDL::Tree my_tree;
 
-    for(int j = 0; j < 4; j++){
-      (*LAT)[j].push_back( (double)theta_new(j) );
-       if((*LAT)[j][i] > limit(j,1)){ 
+		// set up robot description
+		std::string robot_desc_string;
+		ros::param::get("robot_description", robot_desc_string);
+		if (!kdl_parser::treeFromString(robot_desc_string, my_tree)){
+			ROS_ERROR("Failed to construct kdl tree");
+			return 1;
+		}
+
+		// Create solver based on kinematic tree
+		KDL::TreeFkSolverPos_recursive fksolver = KDL::TreeFkSolverPos_recursive(my_tree);
+
+		KDL::JntArray jntPositions = KDL::JntArray(dofs);
+
+		//copy joint positions from matrix to JntArray
+		for (unsigned int k = 0; k < dofs; ++k) {
+			jntPositions(k) = theta_old(k);
+		}
+
+		// Create the frame that will contain the results
+		KDL::Frame cartpos;
+
+		// initializing all task space variables:
+		Matrix<double, 6, 1> d_x;
+
+		Matrix<double, 6, 1> x_old;
+
+		// Calculate forward position kinematics
+		bool kinematics_status;
+		kinematics_status = fksolver.JntToCart(jntPositions,cartpos, "katana_gripper_tool_frame");	// TODO: Katana specific
+		if(kinematics_status>=0){
+			// success now copy the result
+			for (unsigned int i = 0; i < 3; ++i) {
+				x_old(i) = cartpos.p[i];
+			}
+		}
+		else
+		{
+			ROS_ERROR("Could not calculate forward kinematics!");
+		}
+
+		for(int j = 0; j < d_x.rows(); j++){
+			d_x(j) = (*TM)[j][i] - x_old(j);
+		}
+
+		// create Jacobian
+		KDL::Chain chain;		// create chain
+		my_tree.getChain("katana_base_link", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
+
+		KDL::ChainJntToJacSolver jacSolver = KDL::ChainJntToJacSolver(chain);
+		KDL::Jacobian kdlJacobian(dofs);
+
+		jacSolver.JntToJac(jntPositions, kdlJacobian);
+		Matrix<double, 6, Eigen::Dynamic> J = kdlJacobian.data;
+		//J = Jacobi_lat_s(theta_old);
+
+		Matrix<double, Eigen::Dynamic, 6> Jinv;
+		Jinv = Jpinv_s(J);
+
+		MatrixXd I = MatrixXd::Identity(dofs, dofs);
+
+		VectorXd theta_new(dofs);
+
+		MatrixXd alpha = MatrixXd::Identity(dofs, dofs);
+
+		//std::cout << alpha <<std::endl;
+
+		theta_new =  theta_old + Jinv * d_x + alpha * ((I - (Jinv * J)) * d_theta);
+
+		for(unsigned int j = 0; j < dofs; j++){
+			(*LAT)[j].push_back( (double)theta_new(j) );
+			/*if((*LAT)[j][i] > limit(j,1)){
 	 (*LAT)[j][i] = limit(j,1);
 	 limit_violation++;
        }
        if((*LAT)[j][i] < limit(j,0)){  
 	 (*LAT)[j][i] = limit(j,0);
 	 limit_violation++;
-       } 
-    }
+       } */
+		}
 
-    // Adding the 5th and 6th angle: the 6th angle from the mean of JM[5][i]
-    (*LAT)[4].push_back( (*JM)[4][i] );
-    (*LAT)[5].push_back( (*JM)[5][i] );
-  }
-  
-  MatrixXd LAT_tmp(4,tra_size - 1);
-  for(int i = 0; i < 4; i++){
-    LAT_tmp(i,0) = (*LAT)[i][0];
-  }
-  // flatening LAT the first four angles
-  for(int i = 0; i < 4; i++){
-    for(unsigned int j = 1; j < tra_size - 1; j++){
-        LAT_tmp(i,j) = (*LAT)[i][j];
-       (*LAT)[i][j] = (LAT_tmp(i,j) + (((*LAT)[i][j+1]+LAT_tmp(i,j-1)) / 2) )/ 2;
-    }
-  }
+		// Adding the 5th and 6th angle: the 6th angle from the mean of JM[5][i]
+		//(*LAT)[4].push_back( (*JM)[4][i] );
+		//(*LAT)[5].push_back( (*JM)[5][i] );
+	}
 
-  std::cout << "From "<< tra_size << " points there have been " << limit_violation << " limit violations! And " << nan_count << " nans." << std::endl;
-  
-  return true;
+	MatrixXd LAT_tmp(dofs,tra_size - 1);
+	for(unsigned int i = 0; i < dofs; i++){
+		LAT_tmp(i,0) = (*LAT)[i][0];
+	}
+	// flatening LAT the first four angles
+	for(unsigned int i = 0; i < dofs; i++){
+		for(unsigned int j = 1; j < tra_size - 1; j++){
+			LAT_tmp(i,j) = (*LAT)[i][j];
+			(*LAT)[i][j] = (LAT_tmp(i,j) + (((*LAT)[i][j+1]+LAT_tmp(i,j-1)) / 2) )/ 2;
+		}
+	}
+
+	std::cout << "From "<< tra_size << " points there have been " << limit_violation << " limit violations! And " << nan_count << " nans." << std::endl;
+
+	return true;
 }

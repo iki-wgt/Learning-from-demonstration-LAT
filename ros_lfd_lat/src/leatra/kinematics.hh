@@ -9,6 +9,20 @@
 #include <Eigen/SVD>
 #include <Eigen/Eigen>
 
+// include these headers to switch from leatra direct kinematics to kdl
+#include "ros/ros.h"
+#include <kdl/chain.hpp>
+#include <kdl/chainfksolver.hpp>
+#include <kdl/chainfksolverpos_recursive.hpp>
+#include <kdl/frames_io.hpp>
+#include <kdl_parser/kdl_parser.hpp>
+#include <kdl/tree.hpp>
+#include <kdl/treefksolver.hpp>
+#include <kdl/treefksolverpos_recursive.hpp>
+#include <kdl/utilities/utility.h>
+#include <kdl/chainjnttojacsolver.hpp>
+#include <kdl/jacobian.hpp>
+
 #define Pi 3.1415926535898
 
 
