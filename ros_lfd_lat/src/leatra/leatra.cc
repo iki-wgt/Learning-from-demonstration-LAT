@@ -3,6 +3,7 @@
 
 // include these headers to switch from leatra direct kinematics to kdl
 #include "ros/ros.h"
+#include <kdl/kdl.hpp>
 #include <kdl/chain.hpp>
 #include <kdl/chainfksolver.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
@@ -858,8 +859,8 @@ void ndmap::smoothing(double sigma){
 
 double ndmap::area_gauss(double sigma, double x1, double x2){
   double F1, F2;
-  F1 = (1/(sigma * sqrt(2* KDL::PI ))) * exp(-0.5*((x1/sigma) * (x1/sigma)));
-  F2 = (1/(sigma * sqrt(2* KDL::PI ))) * exp(-0.5*((x2/sigma) * (x2/sigma)));
+  F1 = (1/(sigma * sqrt(2* PI ))) * exp(-0.5*((x1/sigma) * (x1/sigma)));
+  F2 = (1/(sigma * sqrt(2* PI ))) * exp(-0.5*((x2/sigma) * (x2/sigma)));
   return (((F1-F2)/2) + F2) * fabs(x1-x2);
 }
 

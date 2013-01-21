@@ -14,7 +14,7 @@
 #include "stringhelp.hh"
 #include "kinematics.hh"
 
-//#define PI 3.1415926535898
+#define PI 3.1415926535898
 
 class ndmap;
 class ndmapSet;

@@ -24,7 +24,7 @@ bool lfd::mandatory_objects(std::deque< object >* _obj, std::string task_name, s
   // Reading trajectories from file
   std::deque< trajectory_lat > JS = lit.read_trajectories( task_name, path );
 
-  for(int i = 0; i < JS.size(); i++){
+  for(unsigned int i = 0; i < JS.size(); i++){
     if(! JS[i].set_obj_order(_obj)) return false; // not all necessary objects are there
   }
   return true;
@@ -77,14 +77,14 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   }*/
   
   // Sorting objects!
-  for(int i = 0; i < JS.size(); i++){
+  for(unsigned int i = 0; i < JS.size(); i++){
     JS[i].set_obj_order(&obj);
   }
   
   // Shortening all trajectories to the size of the shortest:
   // Getting the size of the shortest trajectory
-  int tra_length;
-  for(int i = 0; i < JS.size(); i++){
+  int tra_length = JS[0].map.map_is_consistent();
+  for(unsigned int i = 0; i < JS.size(); i++){
     if(i == 0)
       tra_length = JS[i].map.map_is_consistent();
     else if(JS[i].map.map_is_consistent() < tra_length)
@@ -95,7 +95,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   }
   
   // Sample all trajectories down to the same length 1/20 th of the shortest trajectory
-  for(int i = 0; i < JS.size(); i++){
+  for(unsigned int i = 0; i < JS.size(); i++){
     JS[i].map.thinning( tra_length );
   }
     
@@ -112,7 +112,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   
   // Creating task space trajectories
   std::deque< trajectory_lat > TS( JS.begin(), JS.end());
-  for(int i=0; i < TS.size(); i++){
+  for(unsigned int i=0; i < TS.size(); i++){
     TS[i].joint_to_task_space();
   }
   
@@ -120,7 +120,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   
   // Calculating mean-trajectory in joint space - containing all 6 angles (5 + gripper)
   ndmapSet set;
-  for(int i=0; i < JS.size(); i++){
+  for(unsigned int i=0; i < JS.size(); i++){
     set.add_ndmap(JS[i].get_ndmap());
   }
   ndmapSet mean_JS = apx.standard_deviation(set, true); // having all 6 angles
