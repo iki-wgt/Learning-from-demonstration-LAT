@@ -9,13 +9,19 @@
 #include <kdl/tree.hpp>
 #include <kdl/treefksolver.hpp>
 #include <kdl/treefksolverpos_recursive.hpp>
+#include <kdl/chainjnttojacsolver.hpp>
+#include <kdl/jacobian.hpp>
+#include <kdl/utilities/utility.h>
 
 KDL::TreeFkSolverPos_recursive* fksolver = NULL;
+KDL::Tree my_tree;
 
 void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
 	int dof = jointState->position.size();
+	int dofJac = dof - 2;
 	KDL::JntArray jointpositions = KDL::JntArray(dof);
+	KDL::JntArray jointpositionsJac = KDL::JntArray(dofJac);
 
 
 	for (int i = 0; i < dof; ++i)
@@ -23,26 +29,47 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 		jointpositions(i) = jointState->position[i];
 	}
 
+	for (int i = 0; i < dofJac; ++i)
+	{
+		jointpositionsJac(i) = jointState->position[i];
+	}
+
 	// Create the frame that will contain the results
 	KDL::Frame cartpos;
 
+	//double roll, pitch, yaw;
 	// Calculate forward position kinematics
 	bool kinematics_status;
 	kinematics_status = fksolver->JntToCart(jointpositions,cartpos, "katana_gripper_tool_frame");
 	if(kinematics_status>=0){
-		std::cout << cartpos.p <<std::endl;
+		std::cout << cartpos.p << std::endl;
+
+		//std::cout << cartpos.M.GetRot() << std::endl;
 		printf("%s \n","Succes, thanks KDL!");
 	}else{
 		printf("%s \n","Error: could not calculate forward kinematics :(");
 	}
+
+
+	// just for testing JntToJac
+	// create Jacobian
+	KDL::Chain chain;		// create chain
+	my_tree.getChain("katana_base_link", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
+
+	KDL::ChainJntToJacSolver jacSolver = KDL::ChainJntToJacSolver(chain);
+	KDL::Jacobian kdlJacobian(dofJac);
+
+	jacSolver.JntToJac(jointpositionsJac, kdlJacobian);
+
+	std::cout << kdlJacobian.data << std::endl;
 }
 
 int main(int argc, char **argv)
 {
   
   ros::init(argc, argv, "listener");
-  KDL::Tree my_tree;
   
+
   ros::NodeHandle node;
   
   // set up robot description
