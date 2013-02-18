@@ -39,12 +39,12 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 
 	//double roll, pitch, yaw;
 	// Calculate forward position kinematics
-	bool kinematics_status;
+	int kinematics_status;
 	kinematics_status = fksolver->JntToCart(jointpositions,cartpos, "katana_gripper_tool_frame");
 	if(kinematics_status>=0){
 		std::cout << cartpos.p << std::endl;
 
-		//std::cout << cartpos.M.GetRot() << std::endl;
+		std::cout << cartpos.M.GetRot() << std::endl;
 		printf("%s \n","Succes, thanks KDL!");
 	}else{
 		printf("%s \n","Error: could not calculate forward kinematics :(");

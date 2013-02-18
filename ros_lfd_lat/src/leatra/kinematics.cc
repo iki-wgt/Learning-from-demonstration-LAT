@@ -225,6 +225,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 	nan_count = 0;
 	unsigned int tra_size = (*TM)[0].size();
 	unsigned int dofs = JM->size();
+	unsigned int dofJac = dofs - 2;		// exclude the two angles from the gripper	//TODO: Katana specific
 	int limit_violation = 0;
 	/*Matrix<double, 4,2> limit;	//TODO: these limits have to be read out of the robot description
   limit <<   0.12, 6.15,
@@ -235,20 +236,22 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 	// from here on, all trajectories have the correct dimensions.
 
 	// the first point in the new trajectory is the first mean of JM
-	for(unsigned int i = 0; i < dofs; i++){
+	for(unsigned int i = 0; i < dofs; i++){		//TODO: Katana specific
 		(*LAT)[i].push_back( (*JM)[i][0] );
 	}
-	std::cout << "still in optimize_TJ" << std::endl;
+
 	// Having the first point of the new trajectory set above, now all the other points
 	// are calculated in the loop below:
 	for(unsigned int i = 1; i < tra_size; i++){
 
 		// initializing all joint space variables:
-		VectorXd theta_old(dofs);
-		VectorXd d_theta(dofs);
+		VectorXd theta_old(dofJac);
+		VectorXd d_theta(dofJac);
+		KDL::JntArray jntPositionsJac = KDL::JntArray(dofJac);
 
-		for(unsigned int j = 0; j < dofs; j++){
+		for(unsigned int j = 0; j < dofJac; j++){
 			theta_old(j) = (*LAT)[j][i-1];
+			jntPositionsJac(j) = (*LAT)[j][i-1];
 			d_theta(j) = (*JM)[j][i] - (*LAT)[j][i-1];
 		}
 
@@ -269,7 +272,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		//copy joint positions from matrix to JntArray
 		for (unsigned int k = 0; k < dofs; ++k) {
-			jntPositions(k) = theta_old(k);
+			jntPositions(k) = (*LAT)[k][i-1];
 		}
 
 		// Create the frame that will contain the results
@@ -287,6 +290,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 			// success now copy the result
 			for (unsigned int i = 0; i < 3; ++i) {
 				x_old(i) = cartpos.p[i];
+				//TODO: copy orientation into x_old
 			}
 		}
 		else
@@ -303,26 +307,26 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		my_tree.getChain("katana_base_link", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
 
 		KDL::ChainJntToJacSolver jacSolver = KDL::ChainJntToJacSolver(chain);
-		KDL::Jacobian kdlJacobian(dofs);
+		KDL::Jacobian kdlJacobian(dofJac);
 
-		jacSolver.JntToJac(jntPositions, kdlJacobian);
+		jacSolver.JntToJac(jntPositionsJac, kdlJacobian);
 		Matrix<double, 6, Eigen::Dynamic> J = kdlJacobian.data;
 		//J = Jacobi_lat_s(theta_old);
 
 		Matrix<double, Eigen::Dynamic, 6> Jinv;
 		Jinv = Jpinv_s(J);
 
-		MatrixXd I = MatrixXd::Identity(dofs, dofs);
+		MatrixXd I = MatrixXd::Identity(dofJac, dofJac);
 
-		VectorXd theta_new(dofs);
+		VectorXd theta_new(dofJac);
 
-		MatrixXd alpha = MatrixXd::Identity(dofs, dofs);
+		MatrixXd alpha = MatrixXd::Identity(dofJac, dofJac);
 
 		//std::cout << alpha <<std::endl;
 
 		theta_new =  theta_old + Jinv * d_x + alpha * ((I - (Jinv * J)) * d_theta);
 
-		for(unsigned int j = 0; j < dofs; j++){
+		for(unsigned int j = 0; j < dofJac; j++){
 			(*LAT)[j].push_back( (double)theta_new(j) );
 			/*if((*LAT)[j][i] > limit(j,1)){
 	 (*LAT)[j][i] = limit(j,1);
@@ -334,17 +338,17 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
        } */
 		}
 
-		// Adding the 5th and 6th angle: the 6th angle from the mean of JM[5][i]
-		//(*LAT)[4].push_back( (*JM)[4][i] );
-		//(*LAT)[5].push_back( (*JM)[5][i] );
+		// Adding the 6th and 7th angle: the 6th angle from the mean of JM[5][i]
+		(*LAT)[5].push_back( (*JM)[5][i] );	//TODO: Katana specific!
+		(*LAT)[6].push_back( (*JM)[6][i] );
 	}
 
-	MatrixXd LAT_tmp(dofs,tra_size - 1);
-	for(unsigned int i = 0; i < dofs; i++){
+	MatrixXd LAT_tmp(dofJac,tra_size - 1);
+	for(unsigned int i = 0; i < dofJac; i++){
 		LAT_tmp(i,0) = (*LAT)[i][0];
 	}
-	// flatening LAT the first four angles
-	for(unsigned int i = 0; i < dofs; i++){
+	// flatening LAT the angles that were computed with the Jacobian
+	for(unsigned int i = 0; i < dofJac; i++){
 		for(unsigned int j = 1; j < tra_size - 1; j++){
 			LAT_tmp(i,j) = (*LAT)[i][j];
 			(*LAT)[i][j] = (LAT_tmp(i,j) + (((*LAT)[i][j+1]+LAT_tmp(i,j-1)) / 2) )/ 2;
