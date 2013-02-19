@@ -248,7 +248,7 @@ ndmapSet approximation::constraint_fusion(ndmapSetGroup group, bool add_s){
 
 /**
  * The method make_model(std::deque< trajectory_lat > trajectories) creates a model, on how to behave
- * at a certain situation, regarding speciffic objects.
+ * at a certain situation, regarding specific objects.
  * The parameter is a list of recorded trajectories.
  *
 */
@@ -260,16 +260,13 @@ ndmapSetGroup approximation::make_model(std::deque< trajectory_lat > trajectorie
   if(tra_num <= 0) return group;                                // If the deque parameter is empty
   int obj_num = trajectories[0].get_num_of_objects();           // The amount of objects, carried by each trajectory need to be equal
 
-
   for(int i=0; i < tra_num; i++){
     if(trajectories[i].get_num_of_objects() != obj_num) return group;
   }
 
-
   for(int i=0; i < tra_num; i++){                               // calculating the distance, between trajectory and object.
     tmp.add_ndmapSet(trajectories[i].return_distance());
   }
-
 
   for(int i=0; i < obj_num; i++){
 
@@ -704,11 +701,17 @@ int ndmap::map_is_consistent(){
 
   try{
 	unsigned int matrix_length;
-    if(map.size() == 0) throw data_error(name, -1);                                                             //map is empty - no dimensions there
+    if(map.size() == 0) throw data_error(name, -1);  //map is empty - no dimensions there
     matrix_length = map[0].size();
 
     for(unsigned int i=0; i < map.size(); i++){
-      if(map[i].size() != matrix_length) throw data_error((name + " at dimension" + intTOstring(i)), -2);       // Matrix inconsistent
+      if(map[i].size() != matrix_length)
+    	  throw data_error(
+			  (name + " at dimension " + intTOstring(i) + " map size: "
+					  + intTOstring(map[i].size()) + " matrix size: "
+					  + intTOstring(matrix_length)),
+			  -2
+		  );       // Matrix inconsistent
     }
     return matrix_length;
   }
@@ -739,9 +742,9 @@ void ndmap::minus(object obj){
   int dim = get_dim();
   int el = map_is_consistent();
 
-  if((obj.get_num_of_coordinate() == dim) && (el > 0)){
+  if((obj.get_num_of_coordinate() == 3) && (el > 0)){		// because the task space coordinate from the forward kinematic has 6 members, here has to be compared to the number 3
 
-    for(int i=0; i < dim; i++){
+    for(int i=0; i < 3; i++){
       for(int j=0; j < el; j++){
         map[i][j] = map[i][j] - obj.get_coordinate(i);
       }
@@ -776,7 +779,8 @@ std::deque< std::deque<double> > ndmap::get_deque(){
  *      If the number of dimensions of the object and the ndmao are not equal, a exeption is raised.
  */
 void ndmap::add_offset(object obj){
-  int dim = get_dim();
+  int dim = 3;	//get_dim();
+  // reason of the 3 is explained above in method minus
   int el = map_is_consistent();
 
   if((obj.get_num_of_coordinate() == dim) && (el > 0)){
@@ -949,7 +953,7 @@ bool ndmap::joint_to_task_space(){
   int dim = get_dim();
 
   std::deque< double > init;
-  std::deque< std::deque<double> > task_space(3 ,init); // Three dimensions for x,y,z
+  std::deque< std::deque<double> > task_space(6 ,init); // Three dimensions for x,y,z and 3 for rotation
 
   // switch from leatra DK to KDL DK
   /*if( dim < 5 ){
@@ -1011,6 +1015,11 @@ bool ndmap::joint_to_task_space(){
 		  // success now copy the result
 		  for(unsigned int j=0; j < 3; j++){
 			  task_space[j].push_back(cartpos.p[j]);
+		  }
+
+		  // orientation
+		  for(unsigned int j=3; j < 6; j++){
+			  task_space[j].push_back((cartpos.M.GetRot())(j - 3));		// TODO: Check if this orientation is the right one
 		  }
 	  }else{
 		  ROS_ERROR("Could not calculate forward kinematics!");

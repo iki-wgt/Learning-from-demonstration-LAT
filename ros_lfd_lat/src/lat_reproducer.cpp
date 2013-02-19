@@ -60,8 +60,9 @@ int main(int argc, char **argv)
 
 		// Initialize object recognition
 		Or_Client objectClient("object_recognition", true);
+		ROS_INFO("Waiting for object recognition server");
 		objectClient.waitForServer();
-		ROS_INFO("object recognition server ready");
+		ROS_INFO("Object recognition server ready");
 
 		// get objects
 		objectClient.sendGoal(

@@ -77,22 +77,33 @@ Matrix<double, Eigen::Dynamic, 6> Jpinv_s(Matrix<double, 6, Eigen::Dynamic> J){
     
   JacobiSVD<MatrixXd> svd(J, ComputeFullU | ComputeFullV);
   svd.computeU();	
-  svd.computeV();	
+  svd.computeV();
+
+  int m = -1;
+
+  if(J.rows() < J.cols())
+  {
+	  m = J.rows();
+  }
+  else
+  {
+	  m = J.cols();
+  }
+
 
   Matrix<double, 6, 6> U;
   Matrix<double, Eigen::Dynamic, Eigen::Dynamic> V;
-  Matrix<double, 1, 6> _S;
+  Matrix<double, 1, Eigen::Dynamic> _S(m);
   Matrix<double, Eigen::Dynamic, 6> S = Matrix<double, Eigen::Dynamic, 6>::Zero(J.cols(), 6);
   
   U = svd.matrixU();
   V = svd.matrixV();
   _S = svd.singularValues();
-  S(0,0) = 1 / _S(0);
-  S(1,1) = 1 / _S(1);
-  S(2,2) = 1 / _S(2);
-  S(3,3) = 1 / _S(3);
-  S(4,4) = 1 / _S(4);
-  S(5,5) = 1 / _S(5);
+
+  for (int i = 0; i < m; ++i) {
+	  S(i, i) = 1 / _S(i);
+  }
+
 
   return V * S * U.transpose();
 }
@@ -221,7 +232,7 @@ Matrix<double, 3, 1>  DK_lat(Matrix<double, 4, 1>  angles){
 bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		std::deque< std::deque<double> >*  TM, std::deque< std::deque<double> >* TS ,
 		std::deque< std::deque<double> >*  JM, std::deque< std::deque<double> >* JS){
-
+	ROS_INFO("In optimze");
 	nan_count = 0;
 	unsigned int tra_size = (*TM)[0].size();
 	unsigned int dofs = JM->size();
@@ -259,15 +270,19 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		// set up robot description
 		std::string robot_desc_string;
-		ros::param::get("robot_description", robot_desc_string);
+		if(!ros::param::get("robot_description", robot_desc_string))
+		{
+			ROS_ERROR("Failed to retrieve robot description!");
+			return false;
+		}
 		if (!kdl_parser::treeFromString(robot_desc_string, my_tree)){
 			ROS_ERROR("Failed to construct kdl tree");
-			return 1;
+			return false;
 		}
 
 		// Create solver based on kinematic tree
 		KDL::TreeFkSolverPos_recursive fksolver = KDL::TreeFkSolverPos_recursive(my_tree);
-
+		ROS_INFO("Created fk solver");
 		KDL::JntArray jntPositions = KDL::JntArray(dofs);
 
 		//copy joint positions from matrix to JntArray
@@ -284,24 +299,27 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		Matrix<double, 6, 1> x_old;
 
 		// Calculate forward position kinematics
-		bool kinematics_status;
-		kinematics_status = fksolver.JntToCart(jntPositions,cartpos, "katana_gripper_tool_frame");	// TODO: Katana specific
+		int kinematics_status;
+		kinematics_status = fksolver.JntToCart(jntPositions, cartpos, "katana_gripper_tool_frame");	// TODO: Katana specific
 		if(kinematics_status>=0){
+			ROS_INFO("Did forward kinematic");
 			// success now copy the result
+			KDL::Vector rot = cartpos.M.GetRot();
 			for (unsigned int i = 0; i < 3; ++i) {
 				x_old(i) = cartpos.p[i];
-				//TODO: copy orientation into x_old
+				x_old(i + 3) = rot(i);
 			}
+			ROS_INFO("After for loop");
 		}
 		else
 		{
-			ROS_ERROR("Could not calculate forward kinematics!");
+			ROS_ERROR("Could not calculate forward kinematics! Error code: %d, no of joints: %d, jointpositions: %d", kinematics_status, my_tree.getNrOfJoints(), jntPositions.rows());
 		}
-
+		ROS_INFO("TM rows: %d, columns: %d", (int) TM->size(), (int) (*TM)[0].size());
 		for(int j = 0; j < d_x.rows(); j++){
 			d_x(j) = (*TM)[j][i] - x_old(j);
 		}
-
+		ROS_INFO("Will now create Jacobian.");
 		// create Jacobian
 		KDL::Chain chain;		// create chain
 		my_tree.getChain("katana_base_link", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
@@ -311,11 +329,12 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		jacSolver.JntToJac(jntPositionsJac, kdlJacobian);
 		Matrix<double, 6, Eigen::Dynamic> J = kdlJacobian.data;
+		ROS_INFO("Calculated Jacobian");
 		//J = Jacobi_lat_s(theta_old);
 
 		Matrix<double, Eigen::Dynamic, 6> Jinv;
 		Jinv = Jpinv_s(J);
-
+		ROS_INFO("Calculated pseudo inverse");
 		MatrixXd I = MatrixXd::Identity(dofJac, dofJac);
 
 		VectorXd theta_new(dofJac);

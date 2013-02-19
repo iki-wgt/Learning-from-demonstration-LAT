@@ -128,8 +128,11 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   std::cout << "[Leatra reproduce] Calculating mean-trajectory in task space." << std::endl;
   // Calculating mean-trajectory in task space
   ndmapSetGroup model = apx.make_model(TS);
+  ROS_INFO("Made model");
   model.add_offset(obj);
   ndmapSet mean_TS = apx.constraint_fusion( model, true );
+
+  ROS_INFO("After constraint fusion");
 
   mean_TS.set_name("TaskSpaceData");
   lit.write_ndmapSet(mean_TS);
@@ -138,9 +141,20 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   
   // Creating new trajectory from mean_TS (in task space) and mean_JS (trajectory in joint space) according to Calinon:
   std::deque< double > theta_1;
-  std::deque< std::deque< double > > LAT(6, theta_1);
+  std::deque< std::deque< double > > LAT(7, theta_1);	//TODO: Katana specific!
+  std::deque< std::deque<double> >*  tm = mean_TS.data_pointer(1);
+  ROS_INFO("after tm");
+  std::deque< std::deque<double> >*  ts = mean_TS.data_pointer(3);
+  ROS_INFO("after ts");
+  std::deque< std::deque<double> >*  jm = mean_JS.data_pointer(1);
+  ROS_INFO("after jm");
+  std::deque< std::deque<double> >*  js = mean_JS.data_pointer(3);
 
-  optimize_TJ(&LAT, mean_TS.data_pointer(1), mean_TS.data_pointer(3), mean_JS.data_pointer(1), mean_JS.data_pointer(3));
+  ROS_INFO("Will now optimze TJ");
+  if(!optimize_TJ(&LAT, tm, ts, jm, js))
+  {
+	  ROS_ERROR("Optimizing TJ failed!");
+  }
 
   //time (&end);
   //dif = difftime (end,start);
