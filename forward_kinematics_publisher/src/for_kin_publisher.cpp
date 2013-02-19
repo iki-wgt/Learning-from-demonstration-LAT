@@ -27,7 +27,10 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 	for (int i = 0; i < dof; ++i)
 	{
 		jointpositions(i) = jointState->position[i];
+		std::cout << jointState->position[i] << "\t";
 	}
+
+	std::cout << std::endl;
 
 	for (int i = 0; i < dofJac; ++i)
 	{
@@ -42,10 +45,10 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 	int kinematics_status;
 	kinematics_status = fksolver->JntToCart(jointpositions,cartpos, "katana_gripper_tool_frame");
 	if(kinematics_status>=0){
-		std::cout << cartpos.p << std::endl;
+		//std::cout << cartpos.p << std::endl;
 
-		std::cout << cartpos.M.GetRot() << std::endl;
-		printf("%s \n","Succes, thanks KDL!");
+		//std::cout << cartpos.M.GetRot() << std::endl;
+		//printf("%s \n","Succes, thanks KDL!");
 	}else{
 		printf("%s \n","Error: could not calculate forward kinematics :(");
 	}
@@ -61,7 +64,7 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 
 	jacSolver.JntToJac(jointpositionsJac, kdlJacobian);
 
-	std::cout << kdlJacobian.data << std::endl;
+	//std::cout << kdlJacobian.data << std::endl;
 }
 
 int main(int argc, char **argv)

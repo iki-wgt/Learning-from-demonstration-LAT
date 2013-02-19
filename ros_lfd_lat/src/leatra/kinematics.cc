@@ -232,7 +232,7 @@ Matrix<double, 3, 1>  DK_lat(Matrix<double, 4, 1>  angles){
 bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		std::deque< std::deque<double> >*  TM, std::deque< std::deque<double> >* TS ,
 		std::deque< std::deque<double> >*  JM, std::deque< std::deque<double> >* JS){
-	ROS_INFO("In optimze");
+
 	nan_count = 0;
 	unsigned int tra_size = (*TM)[0].size();
 	unsigned int dofs = JM->size();
@@ -282,7 +282,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		// Create solver based on kinematic tree
 		KDL::TreeFkSolverPos_recursive fksolver = KDL::TreeFkSolverPos_recursive(my_tree);
-		ROS_INFO("Created fk solver");
+
 		KDL::JntArray jntPositions = KDL::JntArray(dofs);
 
 		//copy joint positions from matrix to JntArray
@@ -302,24 +302,22 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		int kinematics_status;
 		kinematics_status = fksolver.JntToCart(jntPositions, cartpos, "katana_gripper_tool_frame");	// TODO: Katana specific
 		if(kinematics_status>=0){
-			ROS_INFO("Did forward kinematic");
 			// success now copy the result
 			KDL::Vector rot = cartpos.M.GetRot();
 			for (unsigned int i = 0; i < 3; ++i) {
 				x_old(i) = cartpos.p[i];
 				x_old(i + 3) = rot(i);
 			}
-			ROS_INFO("After for loop");
 		}
 		else
 		{
 			ROS_ERROR("Could not calculate forward kinematics! Error code: %d, no of joints: %d, jointpositions: %d", kinematics_status, my_tree.getNrOfJoints(), jntPositions.rows());
 		}
-		ROS_INFO("TM rows: %d, columns: %d", (int) TM->size(), (int) (*TM)[0].size());
+
 		for(int j = 0; j < d_x.rows(); j++){
 			d_x(j) = (*TM)[j][i] - x_old(j);
 		}
-		ROS_INFO("Will now create Jacobian.");
+
 		// create Jacobian
 		KDL::Chain chain;		// create chain
 		my_tree.getChain("katana_base_link", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
@@ -329,12 +327,12 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		jacSolver.JntToJac(jntPositionsJac, kdlJacobian);
 		Matrix<double, 6, Eigen::Dynamic> J = kdlJacobian.data;
-		ROS_INFO("Calculated Jacobian");
+
 		//J = Jacobi_lat_s(theta_old);
 
 		Matrix<double, Eigen::Dynamic, 6> Jinv;
 		Jinv = Jpinv_s(J);
-		ROS_INFO("Calculated pseudo inverse");
+
 		MatrixXd I = MatrixXd::Identity(dofJac, dofJac);
 
 		VectorXd theta_new(dofJac);
