@@ -17,8 +17,11 @@
 #include "actionlib/client/simple_client_goal_state.h"
 #include "object_recognition_msgs/ObjectRecognitionAction.h"
 #include "std_srvs/Empty.h"
+#include "pr2_controllers_msgs/JointTrajectoryAction.h"
+
 
 #include <string>
+#include <vector>
 #include <iostream>
 #include <sstream>
 #include <deque>
@@ -27,6 +30,10 @@
 #include "leatra/stringhelp.hh"
 
 typedef actionlib::SimpleActionClient<object_recognition_msgs::ObjectRecognitionAction> Or_Client;
+typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
+
+// the joint_state topic publishes at 25 Hz
+#define RECORDING_HZ	25.0
 
 /**
  * \brief Callback function for the object recognition.
@@ -51,6 +58,20 @@ void activeCb();
  */
 void feedbackCb(
 		const object_recognition_msgs::ObjectRecognitionFeedbackConstPtr& feedback);
+
+/**
+ * Returns a vector with all the joint names of the robot.
+ * Subscribes shortly for the /joint_state topic.
+ *
+ * @param node Current node
+ * @return vector with the joint names
+ */
+std::vector<std::string> getJointNames(ros::NodeHandle& node);
+
+/**
+ * Callback for the /joint_state topic. Unsubscribes immediately after first call.
+ */
+void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState);
 
 int main(int argc, char **argv);
 
