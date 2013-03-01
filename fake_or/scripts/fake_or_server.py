@@ -25,8 +25,8 @@ class RecognitionServer:
                           [0.553, -0.099, 0.3],
                           [0.424, -0.13, 0.3]]
         
-        posCup = 1
-        posCoke = 3
+        posCup = 3
+        posCoke = 1
         
         posCup = posCup - 1
         posCoke = posCoke - 1

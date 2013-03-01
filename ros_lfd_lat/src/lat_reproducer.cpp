@@ -8,6 +8,7 @@
 
 std::deque<object> objects;
 std::vector<std::string> jointNames;
+std::vector<double> jointPositions;
 
 void objectCallback(const actionlib::SimpleClientGoalState& state,
 		const object_recognition_msgs::ObjectRecognitionResultConstPtr& result)
@@ -57,6 +58,9 @@ std::vector<std::string> getJointNames(ros::NodeHandle& node)
 	jointNames.pop_back();
 	jointNames.pop_back();
 
+	jointPositions.pop_back();
+	jointPositions.pop_back();
+
 	return jointNames;
 
 	// with the destruction of jointStateListener the topic is automatically
@@ -69,6 +73,7 @@ void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState)
 	if(jointNames.empty())
 	{
 		jointNames = jointState->name;
+		jointPositions = jointState->position;
 		ROS_INFO("Copied joint names");
 	}
 }
@@ -149,9 +154,26 @@ int main(int argc, char **argv)
 
 			goal.trajectory.joint_names = getJointNames(node);
 			ROS_INFO("Copied joint names");
-			goal.trajectory.points.resize(reproducedTrajectory[0].size());
+			goal.trajectory.points.resize(reproducedTrajectory[0].size() + 1);
 			ROS_INFO("COpy the joint positions");
-			for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
+
+			// the first waypoint has to be the current joint state
+			// otherwise the joint trajectory action fails
+			goal.trajectory.points[0].positions.resize(reproducedTrajectory.size() - 2);
+			goal.trajectory.points[0].velocities.resize(reproducedTrajectory.size() - 2);
+			goal.trajectory.points[0].time_from_start = ros::Duration(0);
+
+			for (unsigned int j = 0; j < reproducedTrajectory.size() - 2; ++j)
+			{
+				goal.trajectory.points[0].positions[j] =
+					jointPositions[j];
+
+				// velocity not needed, so set it to zero
+				goal.trajectory.points[0].velocities[j] = 0.0;
+			}
+
+			// copy the other waypoints
+			for (unsigned int i = 1; i <= reproducedTrajectory[0].size(); ++i) {
 				goal.trajectory.points[i].
 					positions.resize(reproducedTrajectory.size() - 2);
 
@@ -160,11 +182,13 @@ int main(int argc, char **argv)
 
 				// not sure if this time value is correct, but a wrong value should lead to an obvious error
 				goal.trajectory.points[i].time_from_start =
-						ros::Duration(1.0 / RECORDING_HZ * i);
+						ros::Duration(3.0 / RECORDING_HZ * i + 3);
 
 				for (unsigned int j = 0; j < reproducedTrajectory.size() - 2; ++j) {
 					goal.trajectory.points[i].positions[j] =
-						reproducedTrajectory.at(j).at(i);
+						reproducedTrajectory.at(j).at(i - 1);
+						// the current position is the first element so, every
+						// following element is shifted by one
 
 					// velocity not needed, so set it to zero
 					goal.trajectory.points[i].velocities[j] = 0.0;

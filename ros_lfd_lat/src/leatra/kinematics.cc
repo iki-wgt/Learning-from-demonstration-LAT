@@ -320,7 +320,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		// create Jacobian
 		KDL::Chain chain;		// create chain
-		my_tree.getChain("katana_base_link", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
+		my_tree.getChain("katana_base_frame", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
 
 		KDL::ChainJntToJacSolver jacSolver = KDL::ChainJntToJacSolver(chain);
 		KDL::Jacobian kdlJacobian(dofJac);
