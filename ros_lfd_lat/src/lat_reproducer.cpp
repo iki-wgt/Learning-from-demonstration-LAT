@@ -88,8 +88,16 @@ int main(int argc, char **argv)
 	lfd lfd;
 	std::string trajectoryName = "default_trajectory_name";
 
-	ROS_INFO("Which trajectory should be reproduced?");
-	getline(std::cin, trajectoryName);
+	if(argc != 2)
+	{
+		ROS_INFO("Which trajectory should be reproduced?");
+		getline(std::cin, trajectoryName);
+	}
+	else
+	{
+		trajectoryName = argv[1];
+	}
+
 	ROS_INFO("Selected trajectory: %s", trajectoryName.c_str());
 
 	// check if this trajectory exists
