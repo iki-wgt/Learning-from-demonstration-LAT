@@ -266,14 +266,34 @@ int main(int argc, char **argv)
 			trajClient.sendGoal(goal);
 			gripperClient.sendGoal(gripperGoal);
 
-			while(!trajClient.getState().isDone()
-					&& !gripperClient.getState().isDone()
+			while(!(trajClient.getState().isDone()
+					&& gripperClient.getState().isDone())
 					&& ros::ok())
 			{
 				ros::Duration(0.0001).sleep();
 				ros::spinOnce();
 			}
-			ROS_INFO("Trajectory finished.");
+
+			if(trajClient.getState().state_ == trajClient.getState().SUCCEEDED)
+			{
+				ROS_INFO("Arm trajectory finished successfully.");
+			}
+			else
+			{
+				ROS_WARN("Arm trajectory finished not successfully! (%s)",
+						trajClient.getState().toString().c_str());
+			}
+
+			if(gripperClient.getState().state_ == gripperClient.getState().SUCCEEDED)
+			{
+				ROS_INFO("Gripper trajectory finished successfully.");
+			}
+			else
+			{
+				ROS_WARN("Gripper trajectory finished not successfully! (%s)",
+						gripperClient.getState().toString().c_str());
+			}
+
 		}
 		else
 		{
