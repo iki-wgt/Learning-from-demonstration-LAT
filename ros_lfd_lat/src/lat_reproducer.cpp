@@ -62,11 +62,11 @@ std::vector<std::string> getJointNames(ros::NodeHandle& node)
 	gripperJointNames.push_back(jointNames.at(jointNames.size() - 1));
 
 	gripperJointPositions.push_back(
-		jointPositions.at(gripperJointPositions.size() - 2)
+		jointPositions.at(jointPositions.size() - 2)
 		);
 
 	gripperJointPositions.push_back(
-		jointPositions.at(gripperJointPositions.size() - 1)
+		jointPositions.at(jointPositions.size() - 1)
 		);
 
 	jointNames.pop_back();
@@ -274,7 +274,6 @@ int main(int argc, char **argv)
 				ros::spinOnce();
 			}
 			ROS_INFO("Trajectory finished.");
-			ROS_INFO("%s", trajClient.getState().getText().c_str());
 		}
 		else
 		{
