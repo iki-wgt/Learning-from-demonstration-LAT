@@ -251,6 +251,29 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		(*LAT)[i].push_back( (*JM)[i][0] );
 	}
 
+	// create KDL stuff for Jacobian and forward kinematics
+	KDL::Tree my_tree;
+
+	// set up robot description
+	std::string robot_desc_string;
+	if(!ros::param::get("robot_description", robot_desc_string))
+	{
+		ROS_ERROR("Failed to retrieve robot description!");
+		return false;
+	}
+	if (!kdl_parser::treeFromString(robot_desc_string, my_tree)){
+		ROS_ERROR("Failed to construct kdl tree");
+		return false;
+	}
+
+	// Create solver based on kinematic tree
+	KDL::TreeFkSolverPos_recursive fksolver = KDL::TreeFkSolverPos_recursive(my_tree);
+
+	KDL::Chain chain;		// create chain
+	my_tree.getChain("katana_base_frame", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
+
+	KDL::ChainJntToJacSolver jacSolver = KDL::ChainJntToJacSolver(chain);
+
 	// Having the first point of the new trajectory set above, now all the other points
 	// are calculated in the loop below:
 	for(unsigned int i = 1; i < tra_size; i++){
@@ -265,23 +288,6 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 			jntPositionsJac(j) = (*LAT)[j][i-1];
 			d_theta(j) = (*JM)[j][i] - (*LAT)[j][i-1];
 		}
-
-		KDL::Tree my_tree;
-
-		// set up robot description
-		std::string robot_desc_string;
-		if(!ros::param::get("robot_description", robot_desc_string))
-		{
-			ROS_ERROR("Failed to retrieve robot description!");
-			return false;
-		}
-		if (!kdl_parser::treeFromString(robot_desc_string, my_tree)){
-			ROS_ERROR("Failed to construct kdl tree");
-			return false;
-		}
-
-		// Create solver based on kinematic tree
-		KDL::TreeFkSolverPos_recursive fksolver = KDL::TreeFkSolverPos_recursive(my_tree);
 
 		KDL::JntArray jntPositions = KDL::JntArray(dofs);
 
@@ -319,10 +325,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		}
 
 		// create Jacobian
-		KDL::Chain chain;		// create chain
-		my_tree.getChain("katana_base_frame", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
 
-		KDL::ChainJntToJacSolver jacSolver = KDL::ChainJntToJacSolver(chain);
 		KDL::Jacobian kdlJacobian(dofJac);
 
 		jacSolver.JntToJac(jntPositionsJac, kdlJacobian);
