@@ -73,7 +73,7 @@ Matrix<double, 3, 4> Jacobi_lat_s(Matrix<double, 4, 1> theta){
   return J;
 }
 
-Matrix<double, Eigen::Dynamic, 6> Jpinv_s(Matrix<double, 6, Eigen::Dynamic> J){
+Matrix<double, Eigen::Dynamic, 3> Jpinv_s(Matrix<double, 3, Eigen::Dynamic> J){	// omit rotation
     
   JacobiSVD<MatrixXd> svd(J, ComputeFullU | ComputeFullV);
   svd.computeU();	
@@ -91,10 +91,10 @@ Matrix<double, Eigen::Dynamic, 6> Jpinv_s(Matrix<double, 6, Eigen::Dynamic> J){
   }
 
 
-  Matrix<double, 6, 6> U;
+  Matrix<double, 3, 3> U;
   Matrix<double, Eigen::Dynamic, Eigen::Dynamic> V;
   Matrix<double, 1, Eigen::Dynamic> _S(m);
-  Matrix<double, Eigen::Dynamic, 6> S = Matrix<double, Eigen::Dynamic, 6>::Zero(J.cols(), 6);
+  Matrix<double, Eigen::Dynamic, 3> S = Matrix<double, Eigen::Dynamic, 3>::Zero(J.cols(), 3);
   
   U = svd.matrixU();
   V = svd.matrixV();
@@ -315,27 +315,29 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		KDL::Frame cartpos;
 
 		// initializing all task space variables:
-		Matrix<double, 6, 1> d_x;
+		//Matrix<double, 6, 1> d_x;
+		Matrix<double, 3, 1> d_x;	// omit rotation
 
-		Matrix<double, 6, 1> x_old;
+		//Matrix<double, 6, 1> x_old;
+		Matrix<double, 3, 1> x_old;		// omit rotation
 
 		// Calculate forward position kinematics
 		int kinematics_status;
 		kinematics_status = fksolver.JntToCart(jntPositions, cartpos, tip_name);
 		if(kinematics_status>=0){
 			// success now copy the result
-			KDL::Vector rot = cartpos.M.GetRot();	//TODO: may be the wrong orientation!!!!
+			//KDL::Vector rot = cartpos.M.GetRot();	//TODO: may be the wrong orientation!!!!
 			for (unsigned int i = 0; i < 3; ++i) {
 				x_old(i) = cartpos.p[i];
-				x_old(i + 3) = rot(i);
+				//x_old(i + 3) = rot(i);		// omit rotation
 			}
-
-			/*double alpha, beta, gamma;
+			/*ROS_INFO("GetRot: %f, %f, %f", rot(0), rot(1), rot(2));
+			double alpha, beta, gamma;
 		    cartpos.M.GetEulerZYX(alpha, beta, gamma);
+		    ROS_INFO("Euler ZYX: %f, %f, %f", alpha, beta, gamma);
+		    cartpos.M.GetRPY(alpha, beta, gamma);
+		    ROS_INFO("Roll Pitch Yaw: %f, %f, %f", alpha, beta, gamma);*/
 
-		    x_old(3) = alpha;
-		    x_old(4) = beta;
-		    x_old(5) = gamma;*/
 		}
 		else
 		{
@@ -352,11 +354,12 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		jacSolver.JntToJac(jntPositionsJac, kdlJacobian);
 
-		Matrix<double, 6, Eigen::Dynamic> J = kdlJacobian.data;
-
+		//Matrix<double, 6, Eigen::Dynamic> J = kdlJacobian.data;
+		Matrix<double, 3, Eigen::Dynamic> J = kdlJacobian.data.topRows(3);	// omit rotation
 		//J = Jacobi_lat_s(theta_old);
 
-		Matrix<double, Eigen::Dynamic, 6> Jinv;
+		//Matrix<double, Eigen::Dynamic, 6> Jinv;
+		Matrix<double, Eigen::Dynamic, 3> Jinv;
 		Jinv = Jpinv_s(J);
 
 		MatrixXd I = MatrixXd::Identity(dofJac, dofJac);
@@ -364,6 +367,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		VectorXd theta_new(dofJac);
 
 		MatrixXd alpha = MatrixXd::Identity(dofJac, dofJac);
+		alpha = alpha * 1.0;
 
 		//std::cout << alpha <<std::endl;
 
@@ -393,12 +397,12 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		LAT_tmp(i,0) = (*LAT)[i][0];
 	}
 	// flatening LAT the angles that were computed with the Jacobian
-	for(unsigned int i = 0; i < dofJac; i++){
+	/*for(unsigned int i = 0; i < dofJac; i++){
 		for(unsigned int j = 1; j < tra_size - 1; j++){
 			LAT_tmp(i,j) = (*LAT)[i][j];
 			(*LAT)[i][j] = (LAT_tmp(i,j) + (((*LAT)[i][j+1]+LAT_tmp(i,j-1)) / 2) )/ 2;
 		}
-	}
+	}*/
 
 	std::cout << "From "<< tra_size << " points there have been " << limit_violation << " limit violations! And " << nan_count << " nans." << std::endl;
 

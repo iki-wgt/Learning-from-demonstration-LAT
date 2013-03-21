@@ -953,7 +953,8 @@ bool ndmap::joint_to_task_space(){
   int dim = get_dim();
 
   std::deque< double > init;
-  std::deque< std::deque<double> > task_space(6 ,init); // Three dimensions for x,y,z and 3 for rotation
+  //std::deque< std::deque<double> > task_space(6 ,init); // Three dimensions for x,y,z and 3 for rotation
+  std::deque< std::deque<double> > task_space(3 ,init);		// omit rotation
 
   std::string tip_name = "katana_gripper_tool_frame";
   /*if(!ros::param::get("tip_name", tip_name))
@@ -997,10 +998,10 @@ bool ndmap::joint_to_task_space(){
 		  //double alpha, beta, gamma;
 		  //cartpos.M.GetEulerZYX(alpha, beta, gamma);
 		  // orientation
-		  for(unsigned int j=3; j < 6; j++){
+		  /*for(unsigned int j=3; j < 6; j++){
 			  task_space[j].push_back((cartpos.M.GetRot())(j - 3));		// TODO: Check if this orientation is the right one
 			  //task_space[j].push_back((cartpos.M.)(j - 3));
-		  }
+		  }*/
 		  //task_space[3].push_back(alpha);
 		  //task_space[4].push_back(beta);
 		  //task_space[5].push_back(gamma);

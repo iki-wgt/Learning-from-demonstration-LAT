@@ -25,9 +25,9 @@ class RecognitionServer:
                           [0.583, -0.17, 0.3],
                           [0.471, -0.208, 0.3]]
         
-        posCup = 1
-        posCoke = 3
-        
+        posCup = 2
+        posCoke = 4
+        print("posCoke " + str(posCoke) + " posCup " + str(posCup))
         posCup = posCup - 1
         posCoke = posCoke - 1
        

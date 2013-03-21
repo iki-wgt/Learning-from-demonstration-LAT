@@ -151,6 +151,8 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   draw graph;
   graph.graph_std(model2);
 
+  // everything fine until here
+
   std::cout << "[Leatra reproduce] joining trajectories from task space and joint space." << std::endl;
   
   // Creating new trajectory from mean_TS (in task space) and mean_JS (trajectory in joint space) according to Calinon:
