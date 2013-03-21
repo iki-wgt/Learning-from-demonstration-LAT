@@ -73,7 +73,7 @@ Matrix<double, 3, 4> Jacobi_lat_s(Matrix<double, 4, 1> theta){
   return J;
 }
 
-Matrix<double, Eigen::Dynamic, 3> Jpinv_s(Matrix<double, 3, Eigen::Dynamic> J){	// omit rotation
+Matrix<double, Eigen::Dynamic, 3> Jpinv_s(Matrix<double, 3, Eigen::Dynamic> J){
     
   JacobiSVD<MatrixXd> svd(J, ComputeFullU | ComputeFullV);
   svd.computeU();	
@@ -315,28 +315,18 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		KDL::Frame cartpos;
 
 		// initializing all task space variables:
-		//Matrix<double, 6, 1> d_x;
-		Matrix<double, 3, 1> d_x;	// omit rotation
+		Matrix<double, 3, 1> d_x;
 
-		//Matrix<double, 6, 1> x_old;
-		Matrix<double, 3, 1> x_old;		// omit rotation
+		Matrix<double, 3, 1> x_old;
 
 		// Calculate forward position kinematics
 		int kinematics_status;
 		kinematics_status = fksolver.JntToCart(jntPositions, cartpos, tip_name);
 		if(kinematics_status>=0){
 			// success now copy the result
-			//KDL::Vector rot = cartpos.M.GetRot();	//TODO: may be the wrong orientation!!!!
 			for (unsigned int i = 0; i < 3; ++i) {
 				x_old(i) = cartpos.p[i];
-				//x_old(i + 3) = rot(i);		// omit rotation
 			}
-			/*ROS_INFO("GetRot: %f, %f, %f", rot(0), rot(1), rot(2));
-			double alpha, beta, gamma;
-		    cartpos.M.GetEulerZYX(alpha, beta, gamma);
-		    ROS_INFO("Euler ZYX: %f, %f, %f", alpha, beta, gamma);
-		    cartpos.M.GetRPY(alpha, beta, gamma);
-		    ROS_INFO("Roll Pitch Yaw: %f, %f, %f", alpha, beta, gamma);*/
 
 		}
 		else
@@ -354,11 +344,8 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		jacSolver.JntToJac(jntPositionsJac, kdlJacobian);
 
-		//Matrix<double, 6, Eigen::Dynamic> J = kdlJacobian.data;
-		Matrix<double, 3, Eigen::Dynamic> J = kdlJacobian.data.topRows(3);	// omit rotation
-		//J = Jacobi_lat_s(theta_old);
+		Matrix<double, 3, Eigen::Dynamic> J = kdlJacobian.data.topRows(3);
 
-		//Matrix<double, Eigen::Dynamic, 6> Jinv;
 		Matrix<double, Eigen::Dynamic, 3> Jinv;
 		Jinv = Jpinv_s(J);
 
@@ -368,8 +355,6 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		MatrixXd alpha = MatrixXd::Identity(dofJac, dofJac);
 		alpha = alpha * 1.0;
-
-		//std::cout << alpha <<std::endl;
 
 		theta_new =  theta_old + Jinv * d_x + alpha * ((I - (Jinv * J)) * d_theta);
 
