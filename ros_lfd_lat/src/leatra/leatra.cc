@@ -955,33 +955,11 @@ bool ndmap::joint_to_task_space(){
   std::deque< double > init;
   std::deque< std::deque<double> > task_space(6 ,init); // Three dimensions for x,y,z and 3 for rotation
 
-  // switch from leatra DK to KDL DK
-  /*if( dim < 5 ){
-    std::cout<<"[NDMAP] joint_to_task_space: at least 5 dimensions expected!"<<std::endl;
-    return false;
-  }
-  std::deque< double > init;
-  std::deque< std::deque<double> > task_space(3 ,init); // Three dimensions for x,y,z
-
-  for(int i=0; i < el; i++){
-
-    std::deque< double > angles;
-
-    for(int j=0; j < 5; j++){  // taking over only the first 5 angles
-      angles.push_back(map[j][i]);
-    }
-
-    std::deque< double > X;
-    X = DK_lat(angles);
-
-    if(X.size() != 3){
-      std::cout<<"[NDMAP] joint_to_task_space: 3 dimensions expected!"<<std::endl;
-      return false;
-    }
-
-    for(unsigned int j=0; j < X.size(); j++){
-      task_space[j].push_back(X[j]);
-    }
+  std::string tip_name = "katana_gripper_tool_frame";
+  /*if(!ros::param::get("tip_name", tip_name))
+  {
+	  ROS_ERROR("No tip_name specified! (In Leatra) %s", tip_name.c_str());
+	  return false;
   }*/
 
   KDL::Tree my_tree;
@@ -991,7 +969,7 @@ bool ndmap::joint_to_task_space(){
   ros::param::get("robot_description", robot_desc_string);
   if (!kdl_parser::treeFromString(robot_desc_string, my_tree)){
   	ROS_ERROR("Failed to construct kdl tree");
-  	return 1;
+  	return false;
   }
 
   // Create solver based on kinematic tree
@@ -1010,17 +988,22 @@ bool ndmap::joint_to_task_space(){
 
 	  // Calculate forward position kinematics
 	  bool kinematics_status;
-	  kinematics_status = fksolver.JntToCart(jointpositions,cartpos, "katana_gripper_tool_frame");	// TODO: Katana specific
+	  kinematics_status = fksolver.JntToCart(jointpositions,cartpos, tip_name);
 	  if(kinematics_status>=0){
 		  // success now copy the result
 		  for(unsigned int j=0; j < 3; j++){
 			  task_space[j].push_back(cartpos.p[j]);
 		  }
-
+		  //double alpha, beta, gamma;
+		  //cartpos.M.GetEulerZYX(alpha, beta, gamma);
 		  // orientation
 		  for(unsigned int j=3; j < 6; j++){
 			  task_space[j].push_back((cartpos.M.GetRot())(j - 3));		// TODO: Check if this orientation is the right one
+			  //task_space[j].push_back((cartpos.M.)(j - 3));
 		  }
+		  //task_space[3].push_back(alpha);
+		  //task_space[4].push_back(beta);
+		  //task_space[5].push_back(gamma);
 	  }else{
 		  ROS_ERROR("Could not calculate forward kinematics!");
 	  }

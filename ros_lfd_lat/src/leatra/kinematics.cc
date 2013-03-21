@@ -238,11 +238,12 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 	unsigned int dofs = JM->size();
 	unsigned int dofJac = dofs - 2;		// exclude the two angles from the gripper	//TODO: Katana specific
 	int limit_violation = 0;
-	/*Matrix<double, 4,2> limit;	//TODO: these limits have to be read out of the robot description
-  limit <<   0.12, 6.15,
-	    -0.20, 2.15,
-             0.93, 5.34,
-             1.12, 5.15;*/
+	Matrix<double, 5,2> limit;	//TODO: these limits have to be read out of the robot description
+  limit <<   -3.025528, 2.891097,
+		  -0.135228, 2.168572,
+		  -2.221804, 2.054223,
+		  -2.033309, 1.87613,
+		  -2.993240, 2.870985;
 
 	// from here on, all trajectories have the correct dimensions.
 
@@ -250,6 +251,20 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 	for(unsigned int i = 0; i < dofs; i++){		//TODO: Katana specific
 		(*LAT)[i].push_back( (*JM)[i][0] );
 	}
+
+	// Get the root and tip link names from parameter server.
+	  std::string root_name = "katana_base_link";
+	  std::string tip_name = "katana_gripper_tool_frame";
+	  /*if (!ros::param::get("/root_name", root_name))
+	  {
+		ROS_ERROR("No root_name specified!");
+		return false;
+	  }
+	  if (!ros::param::get("/tip_name", tip_name))
+	  {
+		ROS_ERROR("No tip name specified!");
+		return false;
+	  }*/
 
 	// create KDL stuff for Jacobian and forward kinematics
 	KDL::Tree my_tree;
@@ -270,7 +285,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 	KDL::TreeFkSolverPos_recursive fksolver = KDL::TreeFkSolverPos_recursive(my_tree);
 
 	KDL::Chain chain;		// create chain
-	my_tree.getChain("katana_base_frame", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
+	my_tree.getChain(root_name, tip_name, chain);
 
 	KDL::ChainJntToJacSolver jacSolver = KDL::ChainJntToJacSolver(chain);
 
@@ -306,14 +321,21 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		// Calculate forward position kinematics
 		int kinematics_status;
-		kinematics_status = fksolver.JntToCart(jntPositions, cartpos, "katana_gripper_tool_frame");	// TODO: Katana specific
+		kinematics_status = fksolver.JntToCart(jntPositions, cartpos, tip_name);
 		if(kinematics_status>=0){
 			// success now copy the result
-			KDL::Vector rot = cartpos.M.GetRot();
+			KDL::Vector rot = cartpos.M.GetRot();	//TODO: may be the wrong orientation!!!!
 			for (unsigned int i = 0; i < 3; ++i) {
 				x_old(i) = cartpos.p[i];
 				x_old(i + 3) = rot(i);
 			}
+
+			/*double alpha, beta, gamma;
+		    cartpos.M.GetEulerZYX(alpha, beta, gamma);
+
+		    x_old(3) = alpha;
+		    x_old(4) = beta;
+		    x_old(5) = gamma;*/
 		}
 		else
 		{
@@ -329,6 +351,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		KDL::Jacobian kdlJacobian(dofJac);
 
 		jacSolver.JntToJac(jntPositionsJac, kdlJacobian);
+
 		Matrix<double, 6, Eigen::Dynamic> J = kdlJacobian.data;
 
 		//J = Jacobi_lat_s(theta_old);
@@ -348,14 +371,16 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		for(unsigned int j = 0; j < dofJac; j++){
 			(*LAT)[j].push_back( (double)theta_new(j) );
-			/*if((*LAT)[j][i] > limit(j,1)){
+			if((*LAT)[j][i] > limit(j,1)){
+				ROS_WARN("Limit violation value: %f, limit: %f, joint: %d", (*LAT)[j][i], limit(j,1), j);
 	 (*LAT)[j][i] = limit(j,1);
 	 limit_violation++;
        }
-       if((*LAT)[j][i] < limit(j,0)){  
+       if((*LAT)[j][i] < limit(j,0)){
+    	   ROS_WARN("Limit violation value: %f, limit: %f, joint: %d", (*LAT)[j][i], limit(j,0), j);
 	 (*LAT)[j][i] = limit(j,0);
 	 limit_violation++;
-       } */
+       }
 		}
 
 		// Adding the 6th and 7th angle: the 6th angle from the mean of JM[5][i]
