@@ -148,19 +148,19 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
   //
   
  
- std::cout << "Normalizing for Trajectory " << t << std::endl << std::endl;
+ //std::cout << "Normalizing for Trajectory " << t << std::endl << std::endl;
  
   // Normalizing all paths on t:
   if((int)(W.size()) > t){
     for(unsigned int i=0; i < W[t].size(); i++){
       W[t][i].normalize_path_for_x();
-      std::cout<< "NORMALIZING for x: W[" << t << "][" << i << "]" << std::endl;
+      //std::cout<< "NORMALIZING for x: W[" << t << "][" << i << "]" << std::endl;
     }
   }
   for(int i=0; i < (int)(W.size()); i++){
     if(t - (i+1) > -1){
       W[i][t - (i + 1)].normalize_path_for_y();
-      std::cout<< "NORMALIZING for y: W[" << i << "][" << t - (i + 1) << "]" << std::endl;
+      //std::cout<< "NORMALIZING for y: W[" << i << "][" << t - (i + 1) << "]" << std::endl;
     }
   }
   
@@ -169,19 +169,19 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
 
   for(int i = 0; i < t; i++){
     master_path.push_back(W[i][t-(i+1)].get_path_x());  
-    std::cout<< "path number " << i << " from W[" << i << "][" << t - (i + 1) << "]" << " size = " << W[i][t-(i+1)].get_path_x().size() << std::endl;
+    //std::cout<< "path number " << i << " from W[" << i << "][" << t - (i + 1) << "]" << " size = " << W[i][t-(i+1)].get_path_x().size() << std::endl;
   }
   if(t != 0){
     master_path.push_back(W[t-1][0].get_path_y());
-    std::cout<< "path number " << t << " from W[" << t-1 << "][" << 0 << "]" << " size = " << W[t-1][0].get_path_y().size() << std::endl;
+    //std::cout<< "path number " << t << " from W[" << t-1 << "][" << 0 << "]" << " size = " << W[t-1][0].get_path_y().size() << std::endl;
   } else{
     master_path.push_back(W[t][0].get_path_x());   
-    std::cout<< "path number " << t << " from W[" << t << "][" << 0 << "]" << " size = " << W[t][0].get_path_x().size() << std::endl;
+    //std::cout<< "path number " << t << " from W[" << t << "][" << 0 << "]" << " size = " << W[t][0].get_path_x().size() << std::endl;
   }
   if(t < (int)(W.size())){
     for(unsigned int i = 0; i < W[t].size(); i++){
       master_path.push_back(W[t][i].get_path_y());
-      std::cout<< "path number " << i+t+1 << " from W[" << t << "][" << i << "]" << " size = " << W[t][i].get_path_y().size() << std::endl;
+      //std::cout<< "path number " << i+t+1 << " from W[" << t << "][" << i << "]" << " size = " << W[t][i].get_path_y().size() << std::endl;
     }
   }
    

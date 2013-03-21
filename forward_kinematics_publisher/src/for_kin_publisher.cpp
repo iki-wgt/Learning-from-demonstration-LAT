@@ -27,7 +27,7 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 	for (int i = 0; i < dof; ++i)
 	{
 		jointpositions(i) = jointState->position[i];
-		std::cout << jointState->position[i] << "\t";
+		//std::cout << jointState->position[i] << "\t";
 	}
 
 	std::cout << std::endl;
@@ -45,7 +45,7 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 	int kinematics_status;
 	kinematics_status = fksolver->JntToCart(jointpositions,cartpos, "katana_gripper_tool_frame");
 	if(kinematics_status>=0){
-		//std::cout << cartpos.p << std::endl;
+		std::cout << cartpos.p << std::endl;
 
 		//std::cout << cartpos.M.GetRot() << std::endl;
 		//printf("%s \n","Succes, thanks KDL!");
