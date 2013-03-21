@@ -98,13 +98,13 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   for(unsigned int i = 0; i < JS.size(); i++){
     JS[i].map.thinning( tra_length );
   }
-    
+  lit.write_trajectories(JS, "JS_no_warp", "DEBUG/");
   std::cout << "[Leatra reproduce] warping the trajectories in joint space." << std::endl;
   
   // Warping trajectory
   warp_leatra W;
   JS = W.warp_in_task_space(JS);
-  
+  lit.write_trajectories(JS, "JS_warp", "DEBUG/");
   //time_t start,end;
   //char szInput [256];
   //double dif;
@@ -113,9 +113,14 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   // Creating task space trajectories
   std::deque< trajectory_lat > TS( JS.begin(), JS.end());
   for(unsigned int i=0; i < TS.size(); i++){
-    TS[i].joint_to_task_space();
+    if(!TS[i].joint_to_task_space())
+    {
+    	ROS_ERROR("joint_to_task_space failed!");
+    	std::deque< std::deque< double > > emptyLAT;
+	    return emptyLAT;
+    }
   }
-  
+  lit.write_trajectories(TS, "TS_no_warp", "DEBUG/");
   std::cout << "[Leatra reproduce] Calculating mean-trajectory in joint space." << std::endl;
   
   // Calculating mean-trajectory in joint space - containing all 6 angles (5 + gripper)
@@ -124,6 +129,9 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
     set.add_ndmap(JS[i].get_ndmap());
   }
   ndmapSet mean_JS = apx.standard_deviation(set, true); // having all 6 angles
+
+  mean_JS.set_name("TaskSpace_Mean");
+  lit.write_ndmapSet(mean_JS);
 
   std::cout << "[Leatra reproduce] Calculating mean-trajectory in task space." << std::endl;
   // Calculating mean-trajectory in task space
@@ -137,23 +145,28 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   mean_TS.set_name("TaskSpaceData");
   lit.write_ndmapSet(mean_TS);
 
+  ndmapSetGroup model2 = model;
+  model2.add_ndmapSet( mean_TS );
+  model2.set_name("COKE");
+  draw graph;
+  graph.graph_std(model2);
+
   std::cout << "[Leatra reproduce] joining trajectories from task space and joint space." << std::endl;
   
   // Creating new trajectory from mean_TS (in task space) and mean_JS (trajectory in joint space) according to Calinon:
   std::deque< double > theta_1;
   std::deque< std::deque< double > > LAT(7, theta_1);	//TODO: Katana specific!
   std::deque< std::deque<double> >*  tm = mean_TS.data_pointer(1);
-  ROS_INFO("after tm");
   std::deque< std::deque<double> >*  ts = mean_TS.data_pointer(3);
-  ROS_INFO("after ts");
   std::deque< std::deque<double> >*  jm = mean_JS.data_pointer(1);
-  ROS_INFO("after jm");
   std::deque< std::deque<double> >*  js = mean_JS.data_pointer(3);
 
   ROS_INFO("Will now optimze TJ");
   if(!optimize_TJ(&LAT, tm, ts, jm, js))
   {
 	  ROS_ERROR("Optimizing TJ failed!");
+	  std::deque< std::deque< double > > emptyLAT;
+	  return emptyLAT;
   }
 
   //time (&end);
