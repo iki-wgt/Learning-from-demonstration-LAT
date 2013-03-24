@@ -65,7 +65,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
     obj[i].subtract_kate_offset();
   }*/
 
-  std::cout << "[Leatra reproduce] reading trajectories from the file: " << path << task_name << std::endl;
+  ROS_INFO("[Leatra reproduce] reading trajectories from the file: %s%s",path.c_str(), task_name.c_str());
   
   // Reading trajectories from file
   JS = lit.read_trajectories( task_name, path );
@@ -90,7 +90,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
     else if(JS[i].map.map_is_consistent() < tra_length)
       tra_length = JS[i].map.map_is_consistent();
     if(tra_length < 1){
-        std::cout<<"[Leatra Error reproduce] not all trajectories are consistent!"<<std::endl;
+        ROS_ERROR("[Leatra Error reproduce] not all trajectories are consistent!");
     }
   }
   
@@ -98,17 +98,13 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   for(unsigned int i = 0; i < JS.size(); i++){
     JS[i].map.thinning( tra_length );
   }
-  lit.write_trajectories(JS, "JS_no_warp", "DEBUG/");
-  std::cout << "[Leatra reproduce] warping the trajectories in joint space." << std::endl;
+  //lit.write_trajectories(JS, "JS_no_warp", "DEBUG/");
+  ROS_INFO("[Leatra reproduce] warping the trajectories in joint space.");
   
   // Warping trajectory
   warp_leatra W;
   JS = W.warp_in_task_space(JS);
-  lit.write_trajectories(JS, "JS_warp", "DEBUG/");
-  //time_t start,end;
-  //char szInput [256];
-  //double dif;
-  //time (&start);
+  //lit.write_trajectories(JS, "JS_warp", "DEBUG/");
   
   // Creating task space trajectories
   std::deque< trajectory_lat > TS( JS.begin(), JS.end());
@@ -120,9 +116,8 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
 	    return emptyLAT;
     }
   }
-  lit.write_trajectories(TS, "TS_no_warp", "DEBUG/");
-  std::cout << "[Leatra reproduce] Calculating mean-trajectory in joint space." << std::endl;
-  
+  //lit.write_trajectories(TS, "TS_no_warp", "DEBUG/");
+  ROS_INFO("[Leatra reproduce] Calculating mean-trajectory in joint space.");
   // Calculating mean-trajectory in joint space - containing all 6 angles (5 + gripper)
   ndmapSet set;
   for(unsigned int i=0; i < JS.size(); i++){
@@ -130,7 +125,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   }
   ndmapSet mean_JS = apx.standard_deviation(set, true); // having all 6 angles
 
-  mean_JS.set_name("TaskSpace_Mean");
+  mean_JS.set_name("JointSpace_Mean");
   lit.write_ndmapSet(mean_JS);
 
   std::cout << "[Leatra reproduce] Calculating mean-trajectory in task space." << std::endl;
@@ -151,8 +146,6 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   draw graph;
   graph.graph_std(model2);
 
-  // everything fine until here
-
   std::cout << "[Leatra reproduce] joining trajectories from task space and joint space." << std::endl;
   
   // Creating new trajectory from mean_TS (in task space) and mean_JS (trajectory in joint space) according to Calinon:
@@ -170,10 +163,6 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
 	  std::deque< std::deque< double > > emptyLAT;
 	  return emptyLAT;
   }
-
-  //time (&end);
-  //dif = difftime (end,start);
-  //std::cout << "It took " << dif << " Seconds" << std::endl; 
   
   return LAT;
 }

@@ -20,13 +20,13 @@ object position: x y z
 class RecognitionServer:
     def __init__(self):
         
-        self.positions = [[0.442, 0.189, 0.3], 
-                          [0.553, 0.161, 0.3], 
-                          [0.583, -0.17, 0.3],
-                          [0.471, -0.208, 0.3]]
+        self.positions = [[0.408, 0.191, 0.33], 
+                          [0.542, 0.171, 0.33], 
+                          [0.572, -0.170, 0.33],
+                          [0.437, -0.193, 0.33]]
         
         posCup = 2
-        posCoke = 4
+        posCoke = 3
         print("posCoke " + str(posCoke) + " posCup " + str(posCup))
         posCup = posCup - 1
         posCoke = posCoke - 1

@@ -354,19 +354,19 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		VectorXd theta_new(dofJac);
 
 		MatrixXd alpha = MatrixXd::Identity(dofJac, dofJac);
-		alpha = alpha * 1.0;
+		//alpha = alpha * 1.0;
 
 		theta_new =  theta_old + Jinv * d_x + alpha * ((I - (Jinv * J)) * d_theta);
 
 		for(unsigned int j = 0; j < dofJac; j++){
 			(*LAT)[j].push_back( (double)theta_new(j) );
 			if((*LAT)[j][i] > limit(j,1)){
-				ROS_WARN("Limit violation value: %f, limit: %f, joint: %d", (*LAT)[j][i], limit(j,1), j);
+				ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d", (*LAT)[j][i], limit(j,1), j, i);
 	 (*LAT)[j][i] = limit(j,1);
 	 limit_violation++;
        }
        if((*LAT)[j][i] < limit(j,0)){
-    	   ROS_WARN("Limit violation value: %f, limit: %f, joint: %d", (*LAT)[j][i], limit(j,0), j);
+    	   ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d", (*LAT)[j][i], limit(j,0), j, i);
 	 (*LAT)[j][i] = limit(j,0);
 	 limit_violation++;
        }
@@ -382,12 +382,12 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		LAT_tmp(i,0) = (*LAT)[i][0];
 	}
 	// flatening LAT the angles that were computed with the Jacobian
-	/*for(unsigned int i = 0; i < dofJac; i++){
+	for(unsigned int i = 0; i < dofJac; i++){
 		for(unsigned int j = 1; j < tra_size - 1; j++){
 			LAT_tmp(i,j) = (*LAT)[i][j];
 			(*LAT)[i][j] = (LAT_tmp(i,j) + (((*LAT)[i][j+1]+LAT_tmp(i,j-1)) / 2) )/ 2;
 		}
-	}*/
+	}
 
 	std::cout << "From "<< tra_size << " points there have been " << limit_violation << " limit violations! And " << nan_count << " nans." << std::endl;
 

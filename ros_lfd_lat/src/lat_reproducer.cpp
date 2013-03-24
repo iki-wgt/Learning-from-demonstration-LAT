@@ -171,18 +171,20 @@ int main(int argc, char **argv)
 			}
 
 
-			/*for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
+			for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
 				for (unsigned int j = 0; j < reproducedTrajectory.size(); ++j) {
 					std::cout << reproducedTrajectory.at(j).at(i) << "\t";
 				}
 				std::cout << std::endl;
-			}*/
+			}
 
 			ROS_INFO("Create action client");
 			// now move the arm
 			// after the example from http://www.ros.org/wiki/pr2_controllers/Tutorials/Moving%20the%20arm%20using%20the%20Joint%20Trajectory%20Action
-			TrajClient trajClient("katana_arm_controller/joint_trajectory_action");		//TODO: Katana specific
+			TrajClient trajClient("katana_arm_controller/joint_trajectory_action", true);		//TODO: Katana specific
 			//TrajClient gripperClient("katana_arm_controller/gripper_joint_trajectory_action");		//TODO: Katana specific
+			trajClient.waitForServer();
+			ROS_INFO("Action client ready.");
 
 			pr2_controllers_msgs::JointTrajectoryGoal goal;
 			pr2_controllers_msgs::JointTrajectoryGoal gripperGoal;
@@ -190,9 +192,8 @@ int main(int argc, char **argv)
 
 			goal.trajectory.joint_names = getJointNames(node);
 			gripperGoal.trajectory.joint_names = gripperJointNames;
-			ROS_INFO("Copied joint names");
 
-			goal.trajectory.points.resize(reproducedTrajectory[0].size() / 2 + 1);
+			goal.trajectory.points.resize(reproducedTrajectory[0].size() + 1);
 			gripperGoal.trajectory.points.resize(reproducedTrajectory[0].size() + 1);
 
 			ROS_INFO("Copy the joint positions");
@@ -226,7 +227,7 @@ int main(int argc, char **argv)
 			}
 
 			// copy the other waypoints
-			for (unsigned int i = 1; i <= reproducedTrajectory[0].size() / 2; ++i) {
+			for (unsigned int i = 1; i <= reproducedTrajectory[0].size(); ++i) {
 				goal.trajectory.points[i].
 					positions.resize(reproducedTrajectory.size() - 2);
 
@@ -235,10 +236,10 @@ int main(int argc, char **argv)
 
 				// right would be  1.0 / but then gazebo destroys the katana
 				goal.trajectory.points[i].time_from_start =
-						ros::Duration(5.0 / RECORDING_HZ * i + 6);
+						ros::Duration(3.0 / RECORDING_HZ * i + 6);
 				for (unsigned int j = 0; j < reproducedTrajectory.size() - 2; ++j) {
 					goal.trajectory.points[i].positions[j] =
-						reproducedTrajectory.at(j).at((i - 1) * 2);
+						reproducedTrajectory.at(j).at(i - 1);
 						// the current position is the first element so, every
 						// following element is shifted by one
 
@@ -267,6 +268,11 @@ int main(int argc, char **argv)
 			// When to start the trajectory: 0.5s from now
 			goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
 			gripperGoal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
+
+			if(!trajClient.isServerConnected())
+			{
+				ROS_ERROR("Action Server is not connected");
+			}
 
 			// Finally start the trajectory!!!!!
 			ROS_INFO("Starting now with the trajectory.");

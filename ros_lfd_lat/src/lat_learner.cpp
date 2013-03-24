@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 
 	// initialize joint state listener
 	ros::Subscriber jointStateListener = node.subscribe("joint_states",
-			1000,
+			1,
 			trajectoryCallback);
 
 	// initialize service client to switch the motors on and off
