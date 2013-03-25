@@ -235,12 +235,17 @@ ndmapSet approximation::constraint_fusion(ndmapSetGroup group, bool add_s){
     }
   }
 
+  if(add_s)
+  {
+	  //gauss_prod.set[3].smoothing(5);
+  }
+
   std::string name = group.get_name() + "-Trajectory";
   gauss_prod.set_name(name);
   gauss_prod.set[0].set_name(name + "_mean+stdev");
   gauss_prod.set[1].set_name(name + "_mean");
   gauss_prod.set[2].set_name(name + "_mean-stdev");
-  if(add_s) gauss_prod.set[0].set_name(name + "_stdev");
+  if(add_s) gauss_prod.set[3].set_name(name + "_stdev");
 
   if(! gauss_prod.correct_nans()) return empty;			// If the correction of nans is not successful, an empty set is returned
   return gauss_prod;

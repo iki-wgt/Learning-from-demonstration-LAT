@@ -52,7 +52,7 @@ std::vector<std::string> getJointNames(ros::NodeHandle& node)
 	// initialize joint state listener
 	ros::NodeHandle jointNode;
 	ros::Subscriber jointStateListener = jointNode.subscribe("joint_states",
-		1000,
+		1,
 		jointStateCallback);
 	ROS_INFO("subscribed");
 	while(jointNames.empty())
@@ -62,21 +62,21 @@ std::vector<std::string> getJointNames(ros::NodeHandle& node)
 	}
 
 	// copy the gripper names and joitn positions
-	gripperJointNames.push_back(jointNames.at(jointNames.size() - 2));
-	gripperJointNames.push_back(jointNames.at(jointNames.size() - 1));
+	//gripperJointNames.push_back(jointNames.at(jointNames.size() - 2));
+	//gripperJointNames.push_back(jointNames.at(jointNames.size() - 1));
 
-	gripperJointPositions.push_back(
-		jointPositions.at(jointPositions.size() - 2)
-		);
+	//gripperJointPositions.push_back(
+	//	jointPositions.at(jointPositions.size() - 2)
+	//	);
 
-	gripperJointPositions.push_back(
-		jointPositions.at(jointPositions.size() - 1)
-		);
+	//gripperJointPositions.push_back(
+	//	jointPositions.at(jointPositions.size() - 1)
+	//	);
 
+	//jointNames.pop_back();
 	jointNames.pop_back();
-	jointNames.pop_back();
 
-	jointPositions.pop_back();
+	//jointPositions.pop_back();
 	jointPositions.pop_back();
 
 	return jointNames;
@@ -171,12 +171,12 @@ int main(int argc, char **argv)
 			}
 
 
-			for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
+			/*for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
 				for (unsigned int j = 0; j < reproducedTrajectory.size(); ++j) {
 					std::cout << reproducedTrajectory.at(j).at(i) << "\t";
 				}
 				std::cout << std::endl;
-			}
+			}*/
 
 			ROS_INFO("Create action client");
 			// now move the arm
@@ -200,11 +200,11 @@ int main(int argc, char **argv)
 
 			// the first waypoint has to be the current joint state
 			// otherwise the joint trajectory action fails
-			goal.trajectory.points[0].positions.resize(reproducedTrajectory.size() - 2);
-			goal.trajectory.points[0].velocities.resize(reproducedTrajectory.size() - 2);
+			goal.trajectory.points[0].positions.resize(reproducedTrajectory.size() - 1);
+			goal.trajectory.points[0].velocities.resize(reproducedTrajectory.size() - 1);
 			goal.trajectory.points[0].time_from_start = ros::Duration(3);
 
-			for (unsigned int j = 0; j < reproducedTrajectory.size() - 2; ++j)
+			for (unsigned int j = 0; j < reproducedTrajectory.size() - 1; ++j)
 			{
 				goal.trajectory.points[0].positions[j] =
 					jointPositions[j];
@@ -213,31 +213,31 @@ int main(int argc, char **argv)
 				goal.trajectory.points[0].velocities[j] = 0.0;
 			}
 
-			gripperGoal.trajectory.points[0].positions.resize(reproducedTrajectory.size() - 2);
+			gripperGoal.trajectory.points[0].positions.resize(reproducedTrajectory.size());
 			gripperGoal.trajectory.points[0].velocities.resize(reproducedTrajectory.size() - 2);
 			gripperGoal.trajectory.points[0].time_from_start = ros::Duration(3);
 
-			for (unsigned int j = 0; j < 2; ++j)
+			/*for (unsigned int j = 0; j < 2; ++j)
 			{
 				gripperGoal.trajectory.points[0].positions[j] =
 					gripperJointPositions[j];
 
 				// velocity not needed, so set it to zero
 				gripperGoal.trajectory.points[0].velocities[j] = 0.0;
-			}
+			}*/
 
 			// copy the other waypoints
 			for (unsigned int i = 1; i <= reproducedTrajectory[0].size(); ++i) {
 				goal.trajectory.points[i].
-					positions.resize(reproducedTrajectory.size() - 2);
+					positions.resize(reproducedTrajectory.size() - 1);
 
 				goal.trajectory.points[i].
-					velocities.resize(reproducedTrajectory.size() - 2);
+					velocities.resize(reproducedTrajectory.size() - 1);
 
 				// right would be  1.0 / but then gazebo destroys the katana
 				goal.trajectory.points[i].time_from_start =
 						ros::Duration(3.0 / RECORDING_HZ * i + 6);
-				for (unsigned int j = 0; j < reproducedTrajectory.size() - 2; ++j) {
+				for (unsigned int j = 0; j < reproducedTrajectory.size(); ++j) {
 					goal.trajectory.points[i].positions[j] =
 						reproducedTrajectory.at(j).at(i - 1);
 						// the current position is the first element so, every

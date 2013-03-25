@@ -358,6 +358,17 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		theta_new =  theta_old + Jinv * d_x + alpha * ((I - (Jinv * J)) * d_theta);
 
+		/*std::cout << "theta_old\n" << theta_old << "\n" << std::endl;
+		std::cout << "d_x\n" << d_x << "\n" << std::endl;
+		std::cout << "J\n" << J << "\n" << std::endl;
+		std::cout << "Jinv\n" << Jinv << "\n" << std::endl;
+		std::cout << "Leatra Jacobi\n" << Jacobi_lat_s(theta_old.topRows(4)) << "\n" << std::endl;
+		VectorXd theta_tmp(dofJac);
+		theta_tmp = Jinv * d_x;
+		std::cout << "Jinv * d_x\n" << theta_tmp << "\n" << std::endl;
+		theta_tmp = alpha * ((I - (Jinv * J)) * d_theta);
+		std::cout << "alpha * ((I - (Jinv * J)) * d_theta)\n" << theta_tmp << "\n" << std::endl;*/
+
 		for(unsigned int j = 0; j < dofJac; j++){
 			(*LAT)[j].push_back( (double)theta_new(j) );
 			if((*LAT)[j][i] > limit(j,1)){
