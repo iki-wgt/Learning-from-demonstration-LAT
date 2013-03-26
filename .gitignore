@@ -22,4 +22,5 @@ fake_or/.pydevproject
 fake_or/bin/*
 fake_or/.settings/*
 TaskSpaceData.mod/*
-katana300_workaround/build/*
+katana/build/*
+katana/bin/*

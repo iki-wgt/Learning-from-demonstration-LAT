@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>katana-Debug@katana</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.cdt.make.core.makeBuilder</name>
+			<triggers>clean,full,incremental,</triggers>
+			<arguments>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.cleanBuildTarget</key>
+					<value>clean</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.enableCleanBuild</key>
+					<value>true</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.append_environment</key>
+					<value>true</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.stopOnError</key>
+					<value>true</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.enabledIncrementalBuild</key>
+					<value>true</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.build.command</key>
+					<value>/usr/bin/make</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.contents</key>
+					<value>org.eclipse.cdt.make.core.activeConfigSettings</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.build.target.inc</key>
+					<value>all</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.build.arguments</key>
+					<value></value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.buildLocation</key>
+					<value>/home/benny/ros/katana_driver/katana</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.useDefaultBuildCmd</key>
+					<value>false</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.environment</key>
+					<value>VERBOSE=1|ROS_ROOT=/opt/ros/fuerte/share/ros|ROS_PACKAGE_PATH=/home/benny/ros/sick_tim3xx:/home/benny/ros/uos_tools:/home/benny/ros/uos_slam:/home/benny/ros/kurt_driver:/home/benny/ros/kurt_apps:/home/benny/ros/kurtana_robot:/home/benny/ros/katana_manipulation:/home/benny/ros/katana_driver:/opt/ros/fuerte/stacks:/opt/ros/fuerte/share:/opt/ros/fuerte/share/ros:/home/benny/ros:/home/benny/ROS-LfD-LAT:/home/benny/tutorials|PYTHONPATH=/opt/ros/fuerte/lib/python2.7/dist-packages:/opt/ros/fuerte/share/ros/core/roslib/src:/opt/ros/fuerte/lib/python2.7/dist-packages:/opt/ros/fuerte/lib/python2.7/dist-packages:|PATH=/opt/ros/fuerte/bin:/opt/ros/fuerte/share/ros/bin:/opt/ros/fuerte/bin:/opt/ros/fuerte/bin:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games|</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.enableFullBuild</key>
+					<value>true</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.build.target.auto</key>
+					<value>all</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.enableAutoBuild</key>
+					<value>false</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.build.target.clean</key>
+					<value>clean</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.fullBuildTarget</key>
+					<value>all</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.buildArguments</key>
+					<value></value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.build.location</key>
+					<value>/home/benny/ros/katana_driver/katana</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.autoBuildTarget</key>
+					<value>all</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.core.errorOutputParser</key>
+					<value>org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser;org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;</value>
+				</dictionary>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.cdt.make.core.ScannerConfigBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.cdt.core.ccnature</nature>
+		<nature>org.eclipse.cdt.make.core.makeNature</nature>
+		<nature>org.eclipse.cdt.make.core.ScannerConfigNature</nature>
+		<nature>org.eclipse.cdt.core.cnature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>[Subprojects]</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/KatanaNode.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/KatanaNode.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/AbstractKatana.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/AbstractKatana.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/Katana.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/Katana.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/Katana300.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/Katana300.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/SimulatedKatana.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/SimulatedKatana.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/JointStatePublisher.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/JointStatePublisher.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/joint_trajectory_action_controller.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/joint_trajectory_action_controller.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/joint_movement_action_controller.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/joint_movement_action_controller.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/KNIConverter.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/KNIConverter.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/spline_functions.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/spline_functions.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Source Files/katana_gripper_grasp_controller.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/katana_gripper_grasp_controller.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Header Files</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/CMake Rules</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana/Resources</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana_arm_kinematics</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana_arm_kinematics/</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana_arm_kinematics/Source Files</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana_arm_kinematics/Source Files/KNIConverter.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/KNIConverter.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana_arm_kinematics/Source Files/KNIKinematics.cpp</name>
+			<type>1</type>
+			<location>/home/benny/ros/katana_driver/katana/src/KNIKinematics.cpp</location>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana_arm_kinematics/Header Files</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana_arm_kinematics/CMake Rules</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>[Targets]/[exe] katana_arm_kinematics/Resources</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+	</linkedResources>
+</projectDescription>
