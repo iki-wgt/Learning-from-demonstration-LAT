@@ -12,15 +12,25 @@
 #include "std_srvs/Empty.h"
 
 #include <string>
+#include <vector>
 #include <iostream>
 #include <sstream>
 #include <deque>
 #include <boost/thread.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include "leatra/lfd.hh"
 #include "leatra/stringhelp.hh"
 
 typedef actionlib::SimpleActionClient<object_recognition_msgs::ObjectRecognitionAction> Or_Client;
+
+
+
+std::vector<std::string> getAvailableTrajectories();
 
 /**
  * \brief Callback function for the joint state listener.

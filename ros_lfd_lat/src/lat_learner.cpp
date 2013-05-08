@@ -9,6 +9,34 @@ int demoCount = 0;
 ndmap map;
 trajectory_lat trajectory;
 
+std::vector<std::string> getAvailableTrajectories()
+{
+	std::vector<std::string> trajectories;
+	std::string postfix = ".tra";	//every trajectory directory ends with .tra
+
+	// get home directory
+	struct passwd *pw = getpwuid(getuid());
+	const char *homedir = pw->pw_dir;
+
+	boost::filesystem::path homeDir(homedir);
+	boost::filesystem::directory_iterator endIter;
+
+	for (boost::filesystem::directory_iterator dirIter(homeDir); dirIter != endIter; ++dirIter)
+	{
+		if(boost::filesystem::is_directory(dirIter))
+		{
+			if(boost::algorithm::ends_with(
+					dirIter->path().filename().c_str(),
+					postfix))
+			{
+				trajectories.push_back(dirIter->path().filename().c_str());
+			}
+		}
+	}
+
+	return trajectories;
+}
+
 void waitForEnter()
 {
 	continueProgramm = false;
