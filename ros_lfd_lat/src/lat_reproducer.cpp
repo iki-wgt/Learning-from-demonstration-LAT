@@ -236,7 +236,7 @@ int main(int argc, char **argv)
 
 				// right would be  1.0 / but then gazebo destroys the katana
 				goal.trajectory.points[i].time_from_start =
-						ros::Duration(3.0 / RECORDING_HZ * i + 6);
+						ros::Duration(8.0 / RECORDING_HZ * i + 6);
 				for (unsigned int j = 0; j < reproducedTrajectory.size(); ++j) {
 					goal.trajectory.points[i].positions[j] =
 						reproducedTrajectory.at(j).at(i - 1);
