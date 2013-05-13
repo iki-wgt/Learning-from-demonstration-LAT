@@ -25,6 +25,12 @@
 #include <iostream>
 #include <sstream>
 #include <deque>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include "leatra/lfd.hh"
 #include "leatra/stringhelp.hh"
@@ -34,6 +40,8 @@ typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryActi
 
 // the joint_state topic publishes at 25 Hz
 #define RECORDING_HZ	25.0
+
+std::vector<std::string> getAvailableTrajectories();
 
 /**
  * \brief Callback function for the object recognition.

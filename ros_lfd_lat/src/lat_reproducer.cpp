@@ -12,6 +12,38 @@ std::vector<std::string> gripperJointNames;
 std::vector<double> jointPositions;
 std::vector<double> gripperJointPositions;
 
+std::vector<std::string> getAvailableTrajectories()
+{
+	std::string filename;
+
+	std::vector<std::string> trajectories;
+	std::string postfix = ".tra";	//every trajectory directory ends with .tra
+
+	// get home directory
+	struct passwd *pw = getpwuid(getuid());
+	const char *homedir = pw->pw_dir;
+
+	boost::filesystem::path homeDir(homedir);
+	boost::filesystem::directory_iterator endIter;
+
+	for (boost::filesystem::directory_iterator dirIter(homeDir); dirIter != endIter; ++dirIter)
+	{
+		if(boost::filesystem::is_directory(dirIter->path()))
+		{
+			if(boost::algorithm::ends_with(
+					dirIter->path().filename().c_str(),
+					postfix))
+			{
+				filename = dirIter->path().filename().c_str();
+				boost::algorithm::erase_tail(filename, postfix.size());
+				trajectories.push_back(filename);
+			}
+		}
+	}
+
+	return trajectories;
+}
+
 void objectCallback(const actionlib::SimpleClientGoalState& state,
 		const object_recognition_msgs::ObjectRecognitionResultConstPtr& result)
 {
@@ -104,12 +136,42 @@ int main(int argc, char **argv)
 	ROS_INFO("lat_reproducer started");
 
 	lfd lfd;
+	unsigned int traNumber = -2;
+	std::string traNumberStr = "-1";
 	std::string trajectoryName = "default_trajectory_name";
 
 	if(argc != 2)
 	{
-		ROS_INFO("Which trajectory should be reproduced?");
-		getline(std::cin, trajectoryName);
+		ROS_INFO("Available trajectories:");
+		std::vector<std::string> trajectories = getAvailableTrajectories();
+
+		for (unsigned int i = 0; i < trajectories.size(); ++i) {
+				ROS_INFO_STREAM(i << ") " << trajectories.at(i).c_str());
+		}
+
+		ROS_INFO("Which trajectory should be reproduced? (Select by number)");
+		getline(std::cin, traNumberStr);
+
+		try
+		{
+			traNumber = boost::lexical_cast<unsigned int>(traNumberStr);
+
+			if (traNumber < trajectories.size())
+			{
+				trajectoryName = trajectories.at(traNumber);
+			}
+			else
+			{
+				ROS_WARN("Selection out of range!");
+				trajectoryName = "out_of_range_selection";
+			}
+		}
+		catch (boost::bad_lexical_cast &)
+		{
+			ROS_WARN("No valid input!");
+			trajectoryName = "not_valid_selection";
+		}
+
 	}
 	else
 	{
