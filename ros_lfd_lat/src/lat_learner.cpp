@@ -114,6 +114,7 @@ int main(int argc, char **argv)
 	std::deque<trajectory_lat> trajectories;
 
 	bool finished = false;
+	bool saveDemos = true;
 	while(ros::ok() && !finished)
 	{
 		demoCount++;
@@ -189,25 +190,82 @@ int main(int argc, char **argv)
 				ROS_INFO("row: %i, column: %i, value %f", i, j, row.at(j));
 			}
 		}*/
+		bool repeatSelection = false;
 
-		trajectory.set_ndmap(map);
-		trajectories.push_back(trajectory);
-
-		ROS_INFO("Do you want to do another demonstration? (y/n)");
-		getline(std::cin, tmp);
-
-		if (tmp == "n" || tmp == "no")
+		do
 		{
-			finished = true;
-		}
+			repeatSelection = false;
+
+			ROS_INFO("What do you want to do? (select by number)");
+			ROS_INFO("1) Do another demonstration");
+			ROS_INFO("2) Discard this demo and repeat it");
+			ROS_INFO("3) Discard all demonstrations and quit");
+			ROS_INFO("4) Finish the demonstrations and save them");
+
+			int selection = -1;
+
+			std::cin >> selection;
+
+			if (selection == 1 || 4)
+			{
+				trajectory.set_ndmap(map);
+				trajectories.push_back(trajectory);
+
+				if(selection == 4)
+				{
+					finished = true;
+				}
+			}
+			else if (selection == 2)
+			{
+				ROS_WARN("Do you really want to repeat this demo? (y/n)");
+				std::cin >> tmp;
+
+				if(tmp == "y" || tmp == "yes")
+				{
+					demoCount--;
+				}
+				else
+				{
+					repeatSelection = true;
+				}
+			}
+			else if (selection == 3)
+			{
+				ROS_WARN("Do you really want to discard all demos? (y/n)");
+				std::cin >> tmp;
+
+				if(tmp == "y" || tmp == "yes")
+				{
+					finished = true;
+					saveDemos = false;
+				}
+				else
+				{
+					repeatSelection = true;
+				}
+			}
+			else
+			{
+				ROS_WARN("Unknown selection");
+				repeatSelection = true;
+			}
+		} while (repeatSelection);
 	}
 
-	bool success = lfd.save_demo(trajectories, trajectoryName);
+	if (saveDemos)
+	{
+		bool success = lfd.save_demo(trajectories, trajectoryName);
 
-	if (success) {
-		ROS_INFO("Demonstration saved successfully.");
-	} else {
-		ROS_ERROR("Could not save demonstration!");
+		if (success) {
+			ROS_INFO("Demonstration saved successfully.");
+		} else {
+			ROS_ERROR("Could not save demonstration!");
+		}
+	}
+	else
+	{
+		ROS_INFO("No Demonstrations saved.");
 	}
 
 	return 0;
