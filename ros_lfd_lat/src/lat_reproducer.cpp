@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 	ROS_INFO("Selected trajectory: %s", trajectoryName.c_str());
 
 	// check if this trajectory exists
-	if (lfd.leatra_knows_task(trajectoryName, "/home/benny/"))
+	if (lfd.leatra_knows_task(trajectoryName, getHomeDir().c_str()))
 	{
 		ROS_INFO("Trajectory name known.");
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 		// check if all mandatory objects are there
 		bool allItemsThere = false;
 		allItemsThere =
-			lfd.mandatory_objects(&objects, trajectoryName, "/home/benny/");
+			lfd.mandatory_objects(&objects, trajectoryName, getHomeDir().c_str());
 
 		if (allItemsThere)
 		{
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
 			//////////////////////////////////////////////////////////////////////
 			// compute the trajecotry
 			std::deque< std::deque< double > > reproducedTrajectory;
-			reproducedTrajectory = lfd.reproduce(objects, trajectoryName, "/home/benny/");
+			reproducedTrajectory = lfd.reproduce(objects, trajectoryName, getHomeDir().c_str());
 
 			ROS_INFO("Trajectory length: %i", (int)(reproducedTrajectory.size()));
 			if(reproducedTrajectory.size() == 0)
