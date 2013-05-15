@@ -1,12 +1,5 @@
-/*
- * lat_reproducer.h
- *
- *  Created on: 07.01.2013
- *      Author: Benjamin Reiner
- */
-
-#ifndef LAT_REPRODUCER_H_
-#define LAT_REPRODUCER_H_
+#ifndef __LAT_LEARNER_H__
+#define __LAT_LEARNER_H__
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
@@ -17,31 +10,33 @@
 #include "actionlib/client/simple_client_goal_state.h"
 #include "object_recognition_msgs/ObjectRecognitionAction.h"
 #include "std_srvs/Empty.h"
-#include "pr2_controllers_msgs/JointTrajectoryAction.h"
-
 
 #include <string>
 #include <vector>
 #include <iostream>
 #include <sstream>
 #include <deque>
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/lexical_cast.hpp>
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
+#include <boost/thread.hpp>
 
-#include "leatra/lfd.hh"
-#include "leatra/stringhelp.hh"
+
+#include "../leatra/lfd.hh"
+#include "../leatra/stringhelp.hh"
 
 typedef actionlib::SimpleActionClient<object_recognition_msgs::ObjectRecognitionAction> Or_Client;
-typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
-// the joint_state topic publishes at 25 Hz
-#define RECORDING_HZ	25.0
 
-std::vector<std::string> getAvailableTrajectories();
+
+
+
+/**
+ * \brief Callback function for the joint state listener.
+ *
+ * Pure callback function. Do not call it by yourself.
+ * This function only does its stuff, if the active variable is set to true.
+ *
+ * @param jointState The message containing the joint states.
+ */
+void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState);
 
 /**
  * \brief Callback function for the object recognition.
@@ -68,19 +63,27 @@ void feedbackCb(
 		const object_recognition_msgs::ObjectRecognitionFeedbackConstPtr& feedback);
 
 /**
- * Returns a vector with all the joint names of the robot.
- * Subscribes shortly for the /joint_state topic.
+ * \brief Main routine for learning trough averaging.
  *
- * @param node Current node
- * @return vector with the joint names
+ * In this program the user is asked for a name of the trajectory and of each
+ * demo. As many demos are recorded as the user wishes.
+ *
+ * @param argc
+ * @param argv
+ * @return
  */
-std::vector<std::string> getJointNames(ros::NodeHandle& node);
-
-/**
- * Callback for the /joint_state topic. Unsubscribes immediately after first call.
- */
-void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState);
-
 int main(int argc, char **argv);
 
-#endif /* LAT_REPRODUCER_H_ */
+/**
+ * \mainpage ros_lfd_lat
+ *
+ * This project provides a ROS stack for teaching a robot through averaging trajectories.
+ *
+ * This project is based on the bachelor-thesis of Heiko Posenauer and his program Leatra.
+ *
+ * The targeted ROS distribution is Fuerte. The used arms are the Katana and the Powerball.
+ *
+ * As a dependecy Eigen3 has to be located in /usr/local/include.
+ */
+
+#endif

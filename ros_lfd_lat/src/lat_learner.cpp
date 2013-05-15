@@ -1,4 +1,4 @@
-#include "lat_learner.h"
+#include "ros_lfd_lat/lat_learner.h"
 
 std::string trajectoryName = "default_trajectory_name";
 std::string demoName = "default_demo_name";
@@ -168,7 +168,6 @@ int main(int argc, char **argv)
 
 		ROS_INFO("Press enter to end the demonstration.");
 
-		//getline(std::cin, tmp);	does not work blocks the callbacks!
 		continueProgramm = false;
 		boost::thread waitThread = boost::thread(waitForEnter);
 		ros::Rate rate(20);

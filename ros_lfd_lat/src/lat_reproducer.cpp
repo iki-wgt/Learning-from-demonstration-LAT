@@ -12,6 +12,7 @@ std::vector<std::string> gripperJointNames;
 std::vector<double> jointPositions;
 std::vector<double> gripperJointPositions;
 
+
 std::vector<std::string> getAvailableTrajectories()
 {
 	std::string filename;
@@ -19,11 +20,8 @@ std::vector<std::string> getAvailableTrajectories()
 	std::vector<std::string> trajectories;
 	std::string postfix = ".tra";	//every trajectory directory ends with .tra
 
-	// get home directory
-	struct passwd *pw = getpwuid(getuid());
-	const char *homedir = pw->pw_dir;
+	boost::filesystem::path homeDir = getHomeDir();
 
-	boost::filesystem::path homeDir(homedir);
 	boost::filesystem::directory_iterator endIter;
 
 	for (boost::filesystem::directory_iterator dirIter(homeDir); dirIter != endIter; ++dirIter)
