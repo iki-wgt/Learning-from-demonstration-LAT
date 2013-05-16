@@ -206,7 +206,13 @@ int main(int argc, char **argv)
 
 			std::cin >> selection;
 
-			if (selection == 1 || 4)
+			// clear cin
+			std::cin.clear();
+
+			// Ignore to the end of line
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+			if (selection == 1 || selection == 4)
 			{
 				trajectory.set_ndmap(map);
 				trajectories.push_back(trajectory);
@@ -219,7 +225,7 @@ int main(int argc, char **argv)
 			else if (selection == 2)
 			{
 				ROS_WARN("Do you really want to repeat this demo? (y/n)");
-				std::cin >> tmp;
+				getline(std::cin, tmp);
 
 				if(tmp == "y" || tmp == "yes")
 				{
@@ -233,7 +239,7 @@ int main(int argc, char **argv)
 			else if (selection == 3)
 			{
 				ROS_WARN("Do you really want to discard all demos? (y/n)");
-				std::cin >> tmp;
+				getline(std::cin, tmp);
 
 				if(tmp == "y" || tmp == "yes")
 				{

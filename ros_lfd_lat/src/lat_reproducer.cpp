@@ -4,7 +4,7 @@
  *  Created on: 07.01.2013
  *      Author: Benjamin Reiner
  */
-#include "lat_reproducer.h"
+#include "ros_lfd_lat/lat_reproducer.h"
 
 std::deque<object> objects;
 std::vector<std::string> jointNames;
