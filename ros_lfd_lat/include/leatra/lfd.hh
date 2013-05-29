@@ -12,6 +12,8 @@
 #include "leatra.hh"
 #include "litera.hh"
 
+//only for profiling the computation
+#include <boost/timer.hpp>
 
 class lfd{
 
