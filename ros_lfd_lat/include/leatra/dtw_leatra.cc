@@ -9,12 +9,16 @@
  */
 std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< trajectory_lat > JS){ 
  
+  boost::timer timer;
   // Create a list of trajectories in task space
   std::deque< trajectory_lat > TS( JS.begin(), JS.end());
   for(unsigned int i=0; i < TS.size(); i++){
     TS[i].joint_to_task_space();
   }
   
+  ROS_INFO("Create a list of trajectories in task space %f", timer.elapsed());
+  timer.restart();
+
   // warp trajectories in task space
   // warping all permutations of trajectories and looking for the cheapest warp
 
@@ -27,6 +31,9 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
     xy.push_back( TS[i].get_euclide() );
   }
   
+  ROS_INFO("Filling xy %f", timer.elapsed());
+  timer.restart();
+
   // warping all possible pairs -> creating a triangular matrix, for example with 6 trajectories:
   //
   //     0-1  1-2  2-3  3-4  4-5
@@ -37,18 +44,38 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
   //
   for(unsigned int i = 0; i < TS.size() - 1; i++){
     std::deque< warp > w_row;
+    boost::timer timer2;
     for(unsigned int j = i + 1; j < TS.size(); j++){
       warp tmp;
+      ROS_INFO("warp tmp %f", timer2.elapsed());
+      timer2.restart();
       tmp.set_x(xy[i]);
+      ROS_INFO("set x %f", timer2.elapsed());
+      timer2.restart();
       tmp.set_y(xy[j]);
+      ROS_INFO("set y %f", timer2.elapsed());
+            timer2.restart();
       tmp.make_distance_matrix_slope();
+      ROS_INFO("make distance matrix %f", timer2.elapsed());
+            timer2.restart();
       tmp.accumulate_distance_matrix();
+      ROS_INFO("accumulate distance matrix %f", timer2.elapsed());
+            timer2.restart();
       tmp.find_warping_path_classic_adapted();
+      ROS_INFO("find warping path %f", timer2.elapsed());
+            timer2.restart();
       tmp.path_cost();
+      ROS_INFO("path cost %f", timer2.elapsed());
+            timer2.restart();
       w_row.push_back(tmp);
+      ROS_INFO("push back %f", timer2.elapsed());
+            timer2.restart();
     }
     W.push_back(w_row);
   }
+
+  ROS_INFO("Filling W %f", timer.elapsed());
+  timer.restart();
 
   // searching for the cheapest warp
   int first_i = 0;
@@ -69,6 +96,9 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
       }
     }
   }
+
+  ROS_INFO("Searching the cheapest path %f", timer.elapsed());
+  timer.restart();
 
   // first_i and first_j point to a warp made out of two trajectories and those are:
   int t1 = first_i;
@@ -101,6 +131,9 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
     }
   }
 
+  ROS_INFO("Looking for the second cheapest t1 %f", timer.elapsed());
+    timer.restart();
+
   // Looking for the second cheapest among the trajectory t2
   if((int)(W.size()) > t2){
     for(int i=0; i < (int)(W[t2].size()); i++){
@@ -126,6 +159,9 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
 
   int t3 = second_i;
   int t4 = second_j + (second_i + 1);
+
+  ROS_INFO("Looking for the second cheapest t2 %f", timer.elapsed());
+  timer.restart();
 
   // choosing the strongest trajectory and aligning all paths according to it:
   // t is the reference trajectory
@@ -164,6 +200,9 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
     }
   }
   
+  ROS_INFO("Warping all possible pairs %f", timer.elapsed());
+  timer.restart();
+
   // making the master warping path:
   std::deque< std::deque< int > > master_path;
 
@@ -184,6 +223,9 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
       //std::cout<< "path number " << i+t+1 << " from W[" << t << "][" << i << "]" << " size = " << W[t][i].get_path_y().size() << std::endl;
     }
   }
+
+  ROS_INFO("Making the master warping path %f", timer.elapsed());
+  timer.restart();
    
   // apply warping path to all trajectories in JS
   
@@ -191,6 +233,8 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
     JS[i].create_this_sequence( master_path[i] );
   }
   
+  ROS_INFO("Apply warping path %f", timer.elapsed());
+
   return JS;
 }
 

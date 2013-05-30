@@ -1184,7 +1184,9 @@ bool ndmapSet::correct_nans(double ratio){
  */
 void ndmapSet::add_offset(object obj){
   int num_of_maps = get_num_of_maps();
-  for(int i=0; (i < num_of_maps) && (i < 3); i++){              // Explanation: (i < 3) at Position 3, there is the standard deviation, here it doesn't need to be added.
+  for(int i=0; (i < num_of_maps) && (i < 3); i++){
+	  // Explanation: (i < 3) at Position 3, there is the standard deviation,
+	  // here it doesn't need to be added.
     set[i].add_offset(obj);
   }
 }

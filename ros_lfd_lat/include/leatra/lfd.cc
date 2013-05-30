@@ -4,6 +4,8 @@
 #include "draw.hh"
 #include <time.h>
 
+//#define DRAW_GRAPHS
+
 /**
  *  Check, if task specified by the string _task_name at the directory "path" exists.
  *  If it exists, the return value is true.
@@ -45,113 +47,141 @@ bool lfd::save_demo(std::deque< trajectory_lat > tra, std::string task_name, std
 }
 
 /**
- *  This method will read the saved trajectories from file, defined by the "task_name", warp them and create a new trajectory based on the objects in "obj".
+ *  \brief This method will read the saved trajectories from file, defined by the
+ *  "task_name", warp them and create a new trajectory based on the objects
+ *  in "obj".
  *
- *  parameters:
- *
- *  obj: detected objects
- *  task_name: the name of the task (the saved trajectories are found in the folder carrying this name)
- *  path: directory, where all the tasks are saved.
+ *  @param obj detected objects
+ *  @param task_name the name of the task (the saved trajectories are found in the
+ *  folder carrying this name)
+ *  @param path directory, where all the tasks are saved.
+ *  @param useInterim If this parameter is true the prepared demonstrations
+ *  are stored in memory at the first call.
  */
-std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std::string task_name, std::string path){
+std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
+		std::string task_name, std::string path, bool useInterim)
+{
 
   approximation apx;
   litera lit;
   std::deque< trajectory_lat > JS;
-  
-  //TODO: Eventually not needed with the fake object recognition
-  // bringing new objects in Katana Coordinate System:
-  /*for(int i = 0; i < obj.size(); i++){
-    obj[i].subtract_kate_offset();
-  }*/
-
-  ROS_INFO("[Leatra reproduce] reading trajectories from the file: %s%s",path.c_str(), task_name.c_str());
+  ndmapSet mean_JS;
+  ndmapSetGroup model;
   
   boost::timer timer;
-  // Reading trajectories from file
-  JS = lit.read_trajectories( task_name, path );
-  ROS_INFO("Reading trajectories %.12f", timer.elapsed());
-  timer.restart();
-  //TODO: Eventually not needed with the fake object recognition
-  // bringing objects in trajectories in Katana Coordinate System:
-  /*for(int i = 0; i < JS.size(); i++){
-    JS[i].subtract_kate_offset();
-  }*/
   
-  // Sorting objects!
-  for(unsigned int i = 0; i < JS.size(); i++){
-    JS[i].set_obj_order(&obj);
+  if(!useInterim || !isInterimPrepared())
+  {
+	  //TODO: Eventually not needed with the fake object recognition
+	  // bringing new objects in Katana Coordinate System:
+	  /*for(int i = 0; i < obj.size(); i++){
+		obj[i].subtract_kate_offset();
+	  }*/
+
+	  ROS_INFO("[Leatra reproduce] reading trajectories from the file: %s%s",path.c_str(), task_name.c_str());
+
+	  // Reading trajectories from file
+	  JS = lit.read_trajectories( task_name, path );
+	  ROS_INFO("Reading trajectories %.12f", timer.elapsed());
+	  timer.restart();
+	  //TODO: Eventually not needed with the fake object recognition
+	  // bringing objects in trajectories in Katana Coordinate System:
+	  /*for(int i = 0; i < JS.size(); i++){
+		JS[i].subtract_kate_offset();
+	  }*/
+
+	  // Shortening all trajectories to the size of the shortest:
+	  // Getting the size of the shortest trajectory
+	  int tra_length = JS[0].map.map_is_consistent();
+	  for(unsigned int i = 0; i < JS.size(); i++){
+		if(i == 0)
+		  tra_length = JS[i].map.map_is_consistent();
+		else if(JS[i].map.map_is_consistent() < tra_length)
+		  tra_length = JS[i].map.map_is_consistent();
+		if(tra_length < 1){
+			ROS_ERROR("[Leatra Error reproduce] not all trajectories are consistent!");
+		}
+	  }
+
+	  // Sample all trajectories down to the same length 1/20 th of the shortest trajectory
+	  for(unsigned int i = 0; i < JS.size(); i++){
+		JS[i].map.thinning( tra_length );
+	  }
+
+	  ROS_INFO("Shorten trajectories %.12f", timer.elapsed());
+	  timer.restart();
+
+	  //lit.write_trajectories(JS, "JS_no_warp", "DEBUG/");
+	  ROS_INFO("[Leatra reproduce] warping the trajectories in joint space.");
+
+	  // Warping trajectory
+	  warp_leatra W;
+	  JS = W.warp_in_task_space(JS);
+	  //lit.write_trajectories(JS, "JS_warp", "DEBUG/");
+
+	  ROS_INFO("DTW %.12f", timer.elapsed());
+	  timer.restart();
+
+	  /* Sorting not needed
+	  // Sorting objects!
+	  for(unsigned int i = 0; i < JS.size(); i++){
+		JS[i].set_obj_order(&obj);
+	  }
+
+	  ROS_INFO("Sorting objects %.12f", timer.elapsed());
+	  timer.restart();
+	  */
+
+	  // Creating task space trajectories
+	  std::deque< trajectory_lat > TS( JS.begin(), JS.end());
+	  for(unsigned int i=0; i < TS.size(); i++){
+		if(!TS[i].joint_to_task_space())
+		{
+			ROS_ERROR("joint_to_task_space failed!");
+			std::deque< std::deque< double > > emptyLAT;
+			return emptyLAT;
+		}
+	  }
+
+	  ROS_INFO("Creating task space trajectories %.12f", timer.elapsed());
+	  timer.restart();
+
+	  //lit.write_trajectories(TS, "TS_no_warp", "DEBUG/");
+	  ROS_INFO("[Leatra reproduce] Calculating mean-trajectory in joint space.");
+	  // Calculating mean-trajectory in joint space - containing all 6 angles (5 + gripper)
+	  ndmapSet set;
+	  for(unsigned int i=0; i < JS.size(); i++){
+		set.add_ndmap(JS[i].get_ndmap());
+	  }
+	  mean_JS = apx.standard_deviation(set, true); // having all 6 angles
+
+	  ROS_INFO("mean JS %.12f", timer.elapsed());
+	  timer.restart();
+
+#ifdef DRAW_GRAPHS
+	  mean_JS.set_name("JointSpace_Mean");
+	  lit.write_ndmapSet(mean_JS);
+#endif
+
+	  timer.restart();
+
+	  std::cout << "[Leatra reproduce] Calculating mean-trajectory in task space." << std::endl;
+	  // Calculating mean-trajectory in task space
+	  model = apx.make_model(TS);
+
+	  if(useInterim && !isInterimPrepared())
+	  {
+		  interimMean_JS = mean_JS;
+		  interimModel = model;
+	  }
   }
   
-  ROS_INFO("Sorting objects %.12f", timer.elapsed());
-  timer.restart();
-
-  // Shortening all trajectories to the size of the shortest:
-  // Getting the size of the shortest trajectory
-  int tra_length = JS[0].map.map_is_consistent();
-  for(unsigned int i = 0; i < JS.size(); i++){
-    if(i == 0)
-      tra_length = JS[i].map.map_is_consistent();
-    else if(JS[i].map.map_is_consistent() < tra_length)
-      tra_length = JS[i].map.map_is_consistent();
-    if(tra_length < 1){
-        ROS_ERROR("[Leatra Error reproduce] not all trajectories are consistent!");
-    }
-  }
-  
-  // Sample all trajectories down to the same length 1/20 th of the shortest trajectory
-  for(unsigned int i = 0; i < JS.size(); i++){
-    JS[i].map.thinning( tra_length );
+  if(useInterim && isInterimPrepared())
+  {
+	  mean_JS = interimMean_JS;
+	  model = interimModel;
   }
 
-  ROS_INFO("Shorten trajectories %.12f", timer.elapsed());
-  timer.restart();
-
-  //lit.write_trajectories(JS, "JS_no_warp", "DEBUG/");
-  ROS_INFO("[Leatra reproduce] warping the trajectories in joint space.");
-  
-  // Warping trajectory
-  warp_leatra W;
-  JS = W.warp_in_task_space(JS);
-  //lit.write_trajectories(JS, "JS_warp", "DEBUG/");
-  
-  ROS_INFO("DTW %.12f", timer.elapsed());
-  timer.restart();
-
-  // Creating task space trajectories
-  std::deque< trajectory_lat > TS( JS.begin(), JS.end());
-  for(unsigned int i=0; i < TS.size(); i++){
-    if(!TS[i].joint_to_task_space())
-    {
-    	ROS_ERROR("joint_to_task_space failed!");
-    	std::deque< std::deque< double > > emptyLAT;
-	    return emptyLAT;
-    }
-  }
-
-  ROS_INFO("Creating task space trajectories %.12f", timer.elapsed());
-  timer.restart();
-
-  //lit.write_trajectories(TS, "TS_no_warp", "DEBUG/");
-  ROS_INFO("[Leatra reproduce] Calculating mean-trajectory in joint space.");
-  // Calculating mean-trajectory in joint space - containing all 6 angles (5 + gripper)
-  ndmapSet set;
-  for(unsigned int i=0; i < JS.size(); i++){
-    set.add_ndmap(JS[i].get_ndmap());
-  }
-  ndmapSet mean_JS = apx.standard_deviation(set, true); // having all 6 angles
-
-  ROS_INFO("mean JS %.12f", timer.elapsed());
-  timer.restart();
-
-  mean_JS.set_name("JointSpace_Mean");
-  lit.write_ndmapSet(mean_JS);
-
-  timer.restart();
-
-  std::cout << "[Leatra reproduce] Calculating mean-trajectory in task space." << std::endl;
-  // Calculating mean-trajectory in task space
-  ndmapSetGroup model = apx.make_model(TS);
   ROS_INFO("Made model");
   model.add_offset(obj);
   ndmapSet mean_TS = apx.constraint_fusion( model, true );
@@ -161,6 +191,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
 
   ROS_INFO("After constraint fusion");
 
+#ifdef DRAW_GRAPHS
   mean_TS.set_name("TaskSpaceData");
   lit.write_ndmapSet(mean_TS);
 
@@ -169,6 +200,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   model2.set_name("COKE");
   draw graph;
   graph.graph_std(model2);
+#endif
 
   timer.restart();
 
@@ -194,4 +226,9 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj, std:
   timer.restart();
 
   return LAT;
+}
+
+bool lfd::isInterimPrepared()
+{
+	return ((interimMean_JS.get_dim() > 0) && (interimModel.get_dim() > 0));
 }

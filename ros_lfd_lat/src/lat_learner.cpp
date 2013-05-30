@@ -20,6 +20,7 @@ void waitForEnter()
 
 void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
+	//TODO: user Recording Hz
 	if(active)
 	{
 		int dof = jointState->position.size();

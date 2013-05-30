@@ -7,6 +7,8 @@
 #include "leatra.hh"
 #include "dtw2.hh"
 
+//only for profiling the computation
+#include <boost/timer.hpp>
 
 class warp_leatra{
 
