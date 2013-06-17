@@ -17,16 +17,27 @@ object position: x y z
 
 """
 
+cup = -1
+coke = -1
+
 class RecognitionServer:
     def __init__(self):
         
-        self.positions = [[0.4, 0.240, 0.33], 
-                          [0.518, 0.217, 0.33], 
-                          [0.58, -0.121, 0.37],
-                          [0.454, -0.147, 0.37]]
+        self.positions = [[0.358, 0.217, 0.331], 
+                          [0.495, 0.163, 0.342], 
+                          [0.537, -0.167, 0.340],
+                          [0.399, -0.196, 0.343]]
+        #[[0.403, 0.208, 0.33], 
+         #                 [0.527, 0.191, 0.33], 
+          #                [0.57, -0.158, 0.37],
+           #               [0.454, -0.189, 0.37]]
+        posCup = 2
+        posCoke = 3
         
-        posCup = 1
-        posCoke = 4
+        if(cup != -1 and coke != -1):
+            posCup = cup
+            posCoke = coke            
+        
         print("posCoke " + str(posCoke) + " posCup " + str(posCup))
         posCup = posCup - 1
         posCoke = posCoke - 1
@@ -72,12 +83,19 @@ class RecognitionServer:
 
     def execute(self, goal):
         rospy.loginfo("got request")
-        #TODO: add a proper header?? result.header.stamp = rospy.get_rostime()
+        #TODO: add a proper header?? 
+        #self.result.header.stamp = rospy.get_rostime()
+        
         
         #we have a result!
         self.server.set_succeeded(result=self.result)
 
 if __name__ == '__main__':
     rospy.init_node('fake_or_node')
+    
+    if(len(sys.argv) == 3):
+        coke = int(sys.argv[1])
+        cup = int(sys.argv[2])
+    
     server = RecognitionServer()
     rospy.spin()
