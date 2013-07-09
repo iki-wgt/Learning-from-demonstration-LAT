@@ -77,7 +77,7 @@ void feedbackCb(
 
 }
 
-std::vector<std::string> getJointNames(ros::NodeHandle& node)
+std::vector<std::string> getJointNames(bool inSimulation)
 {
 	// initialize joint state listener
 	ros::NodeHandle jointNode;
@@ -91,23 +91,28 @@ std::vector<std::string> getJointNames(ros::NodeHandle& node)
 		ros::spinOnce();
 	}
 
-	// copy the gripper names and joitn positions
-	//gripperJointNames.push_back(jointNames.at(jointNames.size() - 2));
-	//gripperJointNames.push_back(jointNames.at(jointNames.size() - 1));
+	if(inSimulation)
+	{
+		// copy the gripper names and joint positions
+		gripperJointNames.push_back(jointNames.at(jointNames.size() - 2));
+		gripperJointNames.push_back(jointNames.at(jointNames.size() - 1));
 
-	//gripperJointPositions.push_back(
-	//	jointPositions.at(jointPositions.size() - 2)
-	//	);
+		gripperJointPositions.push_back(
+			jointPositions.at(jointPositions.size() - 2)
+		);
 
-	//gripperJointPositions.push_back(
-	//	jointPositions.at(jointPositions.size() - 1)
-	//	);
+		gripperJointPositions.push_back(
+			jointPositions.at(jointPositions.size() - 1)
+		);
 
-	//jointNames.pop_back();
-	jointNames.pop_back();
+		// in Gazebo both finger joints
+		jointNames.pop_back();
+		jointPositions.pop_back();
+	}
 
-	//jointPositions.pop_back();
+	// in real life the katana_l_finger_joint has to be removed only
 	jointPositions.pop_back();
+	jointNames.pop_back();
 
 	return jointNames;
 
@@ -129,7 +134,6 @@ void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState)
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "lat_reproducer");
-	ros::NodeHandle node;
 
 	ROS_INFO("lat_reproducer started");
 
@@ -137,6 +141,11 @@ int main(int argc, char **argv)
 	unsigned int traNumber = -2;
 	std::string traNumberStr = "-1";
 	std::string trajectoryName = "default_trajectory_name";
+
+	// flag that determines whether the program runs on gazebo or not
+	bool inSimulation = false;
+
+	unsigned int armJointCount = 999;
 
 	if(argc != 2)
 	{
@@ -241,90 +250,112 @@ int main(int argc, char **argv)
 			ROS_INFO("Create action client");
 			// now move the arm
 			// after the example from http://www.ros.org/wiki/pr2_controllers/Tutorials/Moving%20the%20arm%20using%20the%20Joint%20Trajectory%20Action
+			TrajClient gripperClient("katana_arm_controller/gripper_joint_trajectory_action");		//TODO: Katana specific
 			TrajClient trajClient("katana_arm_controller/joint_trajectory_action", true);		//TODO: Katana specific
-			//TrajClient gripperClient("katana_arm_controller/gripper_joint_trajectory_action");		//TODO: Katana specific
+
 			trajClient.waitForServer();
+			inSimulation = gripperClient.waitForServer(ros::Duration(0.01));
 			ROS_INFO("Action client ready.");
 
 			pr2_controllers_msgs::JointTrajectoryGoal goal;
 			pr2_controllers_msgs::JointTrajectoryGoal gripperGoal;
 			ROS_INFO("Created goal");
 
-			goal.trajectory.joint_names = getJointNames(node);
-			gripperGoal.trajectory.joint_names = gripperJointNames;
-
+			goal.trajectory.joint_names = getJointNames(inSimulation);
 			goal.trajectory.points.resize(reproducedTrajectory[0].size() + 1);
-			gripperGoal.trajectory.points.resize(reproducedTrajectory[0].size() + 1);
+
+			// if the node runs in Gazebo the gripper has to be controlled
+			// with the gripper_joint_trajectory_action
+			if(inSimulation)
+			{
+				ROS_INFO("in simulation");
+				gripperGoal.trajectory.joint_names = gripperJointNames;
+				gripperGoal.trajectory.points.resize(reproducedTrajectory[0].size() + 1);
+
+				armJointCount = 5;
+
+				gripperGoal.trajectory.points[0].positions.resize(GRIPPER_JOINT_COUNT);
+				gripperGoal.trajectory.points[0].velocities.resize(GRIPPER_JOINT_COUNT);
+				gripperGoal.trajectory.points[0].time_from_start = ros::Duration(TIME_FROM_START);
+
+				for (unsigned int jointNo = 0; jointNo < GRIPPER_JOINT_COUNT; ++jointNo)
+				{
+					gripperGoal.trajectory.points[0].positions[jointNo] =
+						gripperJointPositions[jointNo];
+
+					// velocity not needed, so set it to zero
+					gripperGoal.trajectory.points[0].velocities[jointNo] = 0.0;
+				}
+			}
+			else
+			{
+				ROS_INFO("On real robot");
+				armJointCount = 6;
+			}
 
 			ROS_INFO("Copy the joint positions");
 
 			// the first waypoint has to be the current joint state
 			// otherwise the joint trajectory action fails
-			goal.trajectory.points[0].positions.resize(reproducedTrajectory.size() - 1);
-			goal.trajectory.points[0].velocities.resize(reproducedTrajectory.size() - 1);
-			goal.trajectory.points[0].time_from_start = ros::Duration(3);
+			goal.trajectory.points[0].positions.resize(armJointCount);
+			goal.trajectory.points[0].velocities.resize(armJointCount);
+			goal.trajectory.points[0].time_from_start = ros::Duration(TIME_FROM_START);
 
-			for (unsigned int j = 0; j < reproducedTrajectory.size() - 1; ++j)
+			for (unsigned int jointNo = 0; jointNo < armJointCount; ++jointNo)
 			{
-				goal.trajectory.points[0].positions[j] =
-					jointPositions[j];
+				goal.trajectory.points[0].positions[jointNo] =
+					jointPositions[jointNo];
 
 				// velocity not needed, so set it to zero
-				goal.trajectory.points[0].velocities[j] = 0.0;
+				goal.trajectory.points[0].velocities[jointNo] = 0.0;
 			}
 
-			gripperGoal.trajectory.points[0].positions.resize(reproducedTrajectory.size());
-			gripperGoal.trajectory.points[0].velocities.resize(reproducedTrajectory.size() - 2);
-			gripperGoal.trajectory.points[0].time_from_start = ros::Duration(3);
-
-			/*for (unsigned int j = 0; j < 2; ++j)
-			{
-				gripperGoal.trajectory.points[0].positions[j] =
-					gripperJointPositions[j];
-
-				// velocity not needed, so set it to zero
-				gripperGoal.trajectory.points[0].velocities[j] = 0.0;
-			}*/
-
 			// copy the other waypoints
-			for (unsigned int i = 1; i <= reproducedTrajectory[0].size(); ++i) {
-				goal.trajectory.points[i].
-					positions.resize(reproducedTrajectory.size() - 1);
+			for (unsigned int pointNo = 1; pointNo <= reproducedTrajectory[0].size(); ++pointNo)
+			{
+				goal.trajectory.points[pointNo].
+					positions.resize(armJointCount);
 
-				goal.trajectory.points[i].
-					velocities.resize(reproducedTrajectory.size() - 1);
+				goal.trajectory.points[pointNo].
+					velocities.resize(armJointCount);
 
 				// right would be  1.0 / but then gazebo destroys the katana
-				goal.trajectory.points[i].time_from_start =
-						ros::Duration(8.0 / RECORDING_HZ * i + 6);
-				for (unsigned int j = 0; j < reproducedTrajectory.size(); ++j) {
-					goal.trajectory.points[i].positions[j] =
-						reproducedTrajectory.at(j).at(i - 1);
+				goal.trajectory.points[pointNo].time_from_start =
+						ros::Duration(1.0 / RECORDING_HZ * pointNo + (TIME_FROM_START * 2));
+
+				for (unsigned int jointNo = 0; jointNo < armJointCount; ++jointNo)
+				{
+					goal.trajectory.points[pointNo].positions[jointNo] =
+						reproducedTrajectory.at(jointNo).at(pointNo - 1);
 						// the current position is the first element so, every
 						// following element is shifted by one
 
 					// velocity not needed, so set it to zero
-					goal.trajectory.points[i].velocities[j] = 0.0;
+					goal.trajectory.points[pointNo].velocities[jointNo] = 0.0;
 				}
 
 				// gripper
-				gripperGoal.trajectory.points[i].positions.resize(2);
+				if(inSimulation)
+				{
+					gripperGoal.trajectory.points[pointNo].positions.resize(GRIPPER_JOINT_COUNT);
+					gripperGoal.trajectory.points[pointNo].velocities.resize(GRIPPER_JOINT_COUNT);
 
-				gripperGoal.trajectory.points[i].velocities.resize(2);
+					gripperGoal.trajectory.points[pointNo].time_from_start =
+						ros::Duration(1.0 / RECORDING_HZ * pointNo + (TIME_FROM_START * 2));
 
-				gripperGoal.trajectory.points[i].time_from_start =
-					ros::Duration(3.0 / RECORDING_HZ * i + 6);
+					for (unsigned int jointNo = 0; jointNo < GRIPPER_JOINT_COUNT; ++jointNo)
+					{
+						gripperGoal.trajectory.points[pointNo].positions[jointNo] =
+							reproducedTrajectory.at(jointNo + 5).at(pointNo - 1);		// gripper joints are number 5 and 6
+							// the current position is the first element so, every
+							// following element is shifted by one
 
-				for (unsigned int j = 0; j < 2; ++j) {
-					gripperGoal.trajectory.points[i].positions[j] =
-						reproducedTrajectory.at(j + 5).at(i - 1);		// gripper joints are number 5 and 6
-						// the current position is the first element so, every
-						// following element is shifted by one
-
-					// velocity not needed, so set it to zero
-					gripperGoal.trajectory.points[i].velocities[j] = 0.0;
+						// velocity not needed, so set it to zero
+						gripperGoal.trajectory.points[pointNo].velocities[jointNo] = 0.0;
+					}
 				}
 			}
+
 			// When to start the trajectory: 0.5s from now
 			goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
 			gripperGoal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
@@ -337,14 +368,25 @@ int main(int argc, char **argv)
 			// Finally start the trajectory!!!!!
 			ROS_INFO("Starting now with the trajectory.");
 			trajClient.sendGoal(goal);
-			//gripperClient.sendGoal(gripperGoal);
 
-			while(!(trajClient.getState().isDone()
-					/*&& gripperClient.getState().isDone()*/)
-					&& ros::ok())
+			if(inSimulation)
+			{
+				gripperClient.sendGoal(gripperGoal);
+			}
+
+			while(!trajClient.getState().isDone() && ros::ok())
 			{
 				ros::Duration(0.001).sleep();
 				ros::spinOnce();
+			}
+
+			if (inSimulation)
+			{
+				while(!gripperClient.getState().isDone() && ros::ok())
+				{
+					ros::Duration(0.001).sleep();
+					ros::spinOnce();
+				}
 			}
 
 			if(trajClient.getState().state_ == trajClient.getState().SUCCEEDED)
@@ -357,7 +399,7 @@ int main(int argc, char **argv)
 						trajClient.getState().toString().c_str());
 			}
 
-			/*if(gripperClient.getState().state_ == gripperClient.getState().SUCCEEDED)
+			if(inSimulation && gripperClient.getState().state_ == gripperClient.getState().SUCCEEDED)
 			{
 				ROS_INFO("Gripper trajectory finished successfully.");
 			}
@@ -365,7 +407,7 @@ int main(int argc, char **argv)
 			{
 				ROS_WARN("Gripper trajectory finished not successfully! (%s)",
 						gripperClient.getState().toString().c_str());
-			}*/
+			}
 
 		}
 		else

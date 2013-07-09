@@ -41,7 +41,9 @@ typedef actionlib::SimpleActionClient<object_recognition_msgs::ObjectRecognition
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
 // the joint_state topic publishes at 25 Hz
-#define RECORDING_HZ	25.0
+#define RECORDING_HZ		25.0
+#define TIME_FROM_START		3
+#define GRIPPER_JOINT_COUNT	2
 
 std::vector<std::string> getAvailableTrajectories();
 
@@ -76,7 +78,7 @@ void feedbackCb(
  * @param node Current node
  * @return vector with the joint names
  */
-std::vector<std::string> getJointNames(ros::NodeHandle& node);
+std::vector<std::string> getJointNames(bool inSimulation);
 
 /**
  * Callback for the /joint_state topic. Unsubscribes immediately after first call.
