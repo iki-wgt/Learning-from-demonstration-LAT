@@ -7,7 +7,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+#set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
 
@@ -30,3 +30,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 rosbuild_add_executable(lat_learner src/lat_learner.cpp include/leatra/leatra.cc include/leatra/stringhelp.cc include/leatra/kinematics.cc include/leatra/lfd.cc include/leatra/litera.cc include/leatra/dtw_leatra.cc include/leatra/dtw2.cc include/leatra/draw.cc)
 rosbuild_add_executable(lat_reproducer src/lat_reproducer.cpp include/leatra/leatra.cc include/leatra/stringhelp.cc include/leatra/kinematics.cc include/leatra/lfd.cc include/leatra/litera.cc include/leatra/dtw_leatra.cc include/leatra/dtw2.cc include/leatra/draw.cc)
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+rosbuild_add_gtest(test/ndmaptest test/ndmaptest.cpp)
