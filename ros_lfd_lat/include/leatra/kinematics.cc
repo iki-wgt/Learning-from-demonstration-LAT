@@ -291,24 +291,24 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 	// Having the first point of the new trajectory set above, now all the other points
 	// are calculated in the loop below:
-	for(unsigned int i = 1; i < tra_size; i++){
+	for(unsigned int pointNo = 1; pointNo < tra_size; pointNo++){
 
 		// initializing all joint space variables:
 		VectorXd theta_old(dofJac);
 		VectorXd d_theta(dofJac);
 		KDL::JntArray jntPositionsJac = KDL::JntArray(dofJac);
 
-		for(unsigned int j = 0; j < dofJac; j++){
-			theta_old(j) = (*LAT)[j][i-1];
-			jntPositionsJac(j) = (*LAT)[j][i-1];
-			d_theta(j) = (*JM)[j][i] - (*LAT)[j][i-1];
+		for(unsigned int jointNo = 0; jointNo < dofJac; jointNo++){
+			theta_old(jointNo) = (*LAT)[jointNo][pointNo-1];
+			jntPositionsJac(jointNo) = (*LAT)[jointNo][pointNo-1];
+			d_theta(jointNo) = (*JM)[jointNo][pointNo] - (*LAT)[jointNo][pointNo-1];
 		}
 
 		KDL::JntArray jntPositions = KDL::JntArray(dofs);
 
 		//copy joint positions from matrix to JntArray
 		for (unsigned int k = 0; k < dofs; ++k) {
-			jntPositions(k) = (*LAT)[k][i-1];
+			jntPositions(k) = (*LAT)[k][pointNo-1];
 		}
 
 		// Create the frame that will contain the results
@@ -335,7 +335,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		}
 
 		for(int j = 0; j < d_x.rows(); j++){
-			d_x(j) = (*TM)[j][i] - x_old(j);
+			d_x(j) = (*TM)[j][pointNo] - x_old(j);
 		}
 
 		// create Jacobian
@@ -369,34 +369,36 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		theta_tmp = alpha * ((I - (Jinv * J)) * d_theta);
 		std::cout << "alpha * ((I - (Jinv * J)) * d_theta)\n" << theta_tmp << "\n" << std::endl;*/
 
-		for(unsigned int j = 0; j < dofJac; j++){
-			(*LAT)[j].push_back( (double)theta_new(j) );
-			if((*LAT)[j][i] > limit(j,1)){
-				ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d", (*LAT)[j][i], limit(j,1), j, i);
-	 (*LAT)[j][i] = limit(j,1);
+		for(unsigned int jointNo = 0; jointNo < dofJac; jointNo++){
+			(*LAT)[jointNo].push_back( (double)theta_new(jointNo) );
+			if((*LAT)[jointNo][pointNo] > limit(jointNo,1)){
+				ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d", (*LAT)[jointNo][pointNo], limit(jointNo,1), jointNo, pointNo);
+	 (*LAT)[jointNo][pointNo] = limit(jointNo,1);
 	 limit_violation++;
        }
-       if((*LAT)[j][i] < limit(j,0)){
-    	   ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d", (*LAT)[j][i], limit(j,0), j, i);
-	 (*LAT)[j][i] = limit(j,0);
+       if((*LAT)[jointNo][pointNo] < limit(jointNo,0)){
+    	   ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d", (*LAT)[jointNo][pointNo], limit(jointNo,0), jointNo, pointNo);
+	 (*LAT)[jointNo][pointNo] = limit(jointNo,0);
 	 limit_violation++;
        }
 		}
 
 		// Adding the 6th and 7th angle: the 6th angle from the mean of JM[5][i]
-		(*LAT)[5].push_back( (*JM)[5][i] );	//TODO: Katana specific!
-		(*LAT)[6].push_back( (*JM)[6][i] );
+		(*LAT)[5].push_back( (*JM)[5][pointNo] );	//TODO: Katana specific!
+		(*LAT)[6].push_back( (*JM)[6][pointNo] );
 	}
 
 	MatrixXd LAT_tmp(dofJac,tra_size - 1);
-	for(unsigned int i = 0; i < dofJac; i++){
-		LAT_tmp(i,0) = (*LAT)[i][0];
+	for(unsigned int jointNo = 0; jointNo < dofJac; jointNo++){
+		LAT_tmp(jointNo,0) = (*LAT)[jointNo][0];
 	}
 	// flatening LAT the angles that were computed with the Jacobian
-	for(unsigned int i = 0; i < dofJac; i++){
-		for(unsigned int j = 1; j < tra_size - 1; j++){
-			LAT_tmp(i,j) = (*LAT)[i][j];
-			(*LAT)[i][j] = (LAT_tmp(i,j) + (((*LAT)[i][j+1]+LAT_tmp(i,j-1)) / 2) )/ 2;
+	for(unsigned int jointNo = 0; jointNo < dofJac; jointNo++){
+		for(unsigned int pointNo = 1; pointNo < tra_size - 1; pointNo++){
+			LAT_tmp(jointNo,pointNo) = (*LAT)[jointNo][pointNo];
+			(*LAT)[jointNo][pointNo] = (LAT_tmp(jointNo,pointNo)
+					+ (((*LAT)[jointNo][pointNo+1]+LAT_tmp(jointNo,pointNo-1)) / 2) )/ 2;
+
 		}
 	}
 
