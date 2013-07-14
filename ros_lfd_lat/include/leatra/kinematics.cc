@@ -372,16 +372,25 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		for(unsigned int jointNo = 0; jointNo < dofJac; jointNo++){
 			(*LAT)[jointNo].push_back( (double)theta_new(jointNo) );
 			if((*LAT)[jointNo][pointNo] > limit(jointNo,1)){
-				ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d", (*LAT)[jointNo][pointNo], limit(jointNo,1), jointNo, pointNo);
-	 (*LAT)[jointNo][pointNo] = limit(jointNo,1);
-	 limit_violation++;
+				ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d",
+						(*LAT)[jointNo][pointNo],
+						limit(jointNo,1),
+						jointNo,
+						pointNo);
+				(*LAT)[jointNo][pointNo] = limit(jointNo,1);
+				limit_violation++;
        }
        if((*LAT)[jointNo][pointNo] < limit(jointNo,0)){
-    	   ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d", (*LAT)[jointNo][pointNo], limit(jointNo,0), jointNo, pointNo);
-	 (*LAT)[jointNo][pointNo] = limit(jointNo,0);
-	 limit_violation++;
+    	   ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d",
+    			   (*LAT)[jointNo][pointNo],
+    			   limit(jointNo,0),
+    			   jointNo,
+    			   pointNo);
+
+    	   (*LAT)[jointNo][pointNo] = limit(jointNo,0);
+    	   limit_violation++;
        }
-		}
+	  }
 
 		// Adding the 6th and 7th angle: the 6th angle from the mean of JM[5][i]
 		(*LAT)[5].push_back( (*JM)[5][pointNo] );	//TODO: Katana specific!
@@ -392,15 +401,34 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 	for(unsigned int jointNo = 0; jointNo < dofJac; jointNo++){
 		LAT_tmp(jointNo,0) = (*LAT)[jointNo][0];
 	}
+
 	// flatening LAT the angles that were computed with the Jacobian
 	for(unsigned int jointNo = 0; jointNo < dofJac; jointNo++){
 		for(unsigned int pointNo = 1; pointNo < tra_size - 1; pointNo++){
 			LAT_tmp(jointNo,pointNo) = (*LAT)[jointNo][pointNo];
 			(*LAT)[jointNo][pointNo] = (LAT_tmp(jointNo,pointNo)
 					+ (((*LAT)[jointNo][pointNo+1]+LAT_tmp(jointNo,pointNo-1)) / 2) )/ 2;
-
 		}
 	}
+
+	const unsigned int THINNING_FACTOR = 10; //use only every 10th value
+	size_t newSize = tra_size / THINNING_FACTOR;
+
+	// thinning
+	for (size_t jointNo = 0; jointNo < dofs; ++jointNo)
+	{
+		std::deque<double> thinnedPoints(newSize);
+
+		for (size_t pointNo = 0; pointNo < newSize; ++pointNo)
+		{
+			thinnedPoints[pointNo] = LAT->at(jointNo)[pointNo * THINNING_FACTOR];
+			// pointNo * THINNING_FACTOR is never bigger than tra_size because
+			// tra_size / THINNING_FACTOR rounds down
+		}
+		// replace old LAT by the thinned one
+		(*LAT)[jointNo] = thinnedPoints;
+	}
+
 
 	std::cout << "From "<< tra_size << " points there have been " << limit_violation << " limit violations! And " << nan_count << " nans." << std::endl;
 

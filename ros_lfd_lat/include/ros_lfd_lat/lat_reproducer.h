@@ -41,9 +41,11 @@ typedef actionlib::SimpleActionClient<object_recognition_msgs::ObjectRecognition
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
 // the joint_state topic publishes at 25 Hz
-#define RECORDING_HZ		25.0
-#define TIME_FROM_START		3
-#define GRIPPER_JOINT_COUNT	2
+const double RECORDING_HZ = 25.0;
+const unsigned int THINNING_FACTOR = 10;
+const double REPRODUCE_HZ = RECORDING_HZ / THINNING_FACTOR;
+const double TIME_FROM_START = 3;
+const unsigned int GRIPPER_JOINT_COUNT = 2;
 
 std::vector<std::string> getAvailableTrajectories();
 

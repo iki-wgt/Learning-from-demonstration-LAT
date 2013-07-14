@@ -240,12 +240,12 @@ int main(int argc, char **argv)
 			}
 
 
-			/*for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
+			for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
 				for (unsigned int j = 0; j < reproducedTrajectory.size(); ++j) {
 					std::cout << reproducedTrajectory.at(j).at(i) << "\t";
 				}
 				std::cout << std::endl;
-			}*/
+			}
 
 			ROS_INFO("Create action client");
 			// now move the arm
@@ -316,12 +316,12 @@ int main(int argc, char **argv)
 				goal.trajectory.points[pointNo].
 					positions.resize(armJointCount);
 
-				goal.trajectory.points[pointNo].
-					velocities.resize(armJointCount);
+				//goal.trajectory.points[pointNo].
+					//velocities.resize(armJointCount);
 
 				// right would be  1.0 / but then gazebo destroys the katana
 				goal.trajectory.points[pointNo].time_from_start =
-						ros::Duration(1.0 / RECORDING_HZ * pointNo + (TIME_FROM_START * 2));
+						ros::Duration(1.0 / REPRODUCE_HZ * pointNo + (TIME_FROM_START * 2));
 
 				for (unsigned int jointNo = 0; jointNo < armJointCount; ++jointNo)
 				{
@@ -331,7 +331,16 @@ int main(int argc, char **argv)
 						// following element is shifted by one
 
 					// velocity not needed, so set it to zero
-					goal.trajectory.points[pointNo].velocities[jointNo] = 0.0;
+					//goal.trajectory.points[pointNo].velocities[jointNo] = 0.0;
+					//double positionDelta = goal.trajectory.points[pointNo].positions[jointNo]
+					      //                 - goal.trajectory.points[pointNo - 1].positions[jointNo];
+					//double timeDelta = goal.trajectory.points[pointNo].time_from_start.toSec()
+						//	 - goal.trajectory.points[pointNo - 1].time_from_start.toSec();
+
+					//goal.trajectory.points[pointNo].velocities[jointNo] = 0.0;
+							//positionDelta / timeDelta; // position difference divided by the time
+
+					//ROS_INFO("Velocity: %f joint %d, point %d", goal.trajectory.points[pointNo].velocities[jointNo], jointNo, pointNo);
 				}
 
 				// gripper
@@ -341,7 +350,7 @@ int main(int argc, char **argv)
 					gripperGoal.trajectory.points[pointNo].velocities.resize(GRIPPER_JOINT_COUNT);
 
 					gripperGoal.trajectory.points[pointNo].time_from_start =
-						ros::Duration(1.0 / RECORDING_HZ * pointNo + (TIME_FROM_START * 2));
+						ros::Duration(1.0 / REPRODUCE_HZ * pointNo + (TIME_FROM_START * 2));
 
 					for (unsigned int jointNo = 0; jointNo < GRIPPER_JOINT_COUNT; ++jointNo)
 					{
@@ -355,6 +364,11 @@ int main(int argc, char **argv)
 					}
 				}
 			}
+
+			/*for (unsigned int jointNo = 0; jointNo < armJointCount; ++jointNo)
+			{
+				goal.trajectory.points[reproducedTrajectory[0].size()].velocities[jointNo] = 0.0;
+			}*/
 
 			// When to start the trajectory: 0.5s from now
 			goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
@@ -387,6 +401,16 @@ int main(int argc, char **argv)
 					ros::Duration(0.001).sleep();
 					ros::spinOnce();
 				}
+
+				if(gripperClient.getState().state_ == gripperClient.getState().SUCCEEDED)
+				{
+					ROS_INFO("Gripper trajectory finished successfully.");
+				}
+				else
+				{
+					ROS_WARN("Gripper trajectory finished not successfully! (%s)",
+							gripperClient.getState().toString().c_str());
+				}
 			}
 
 			if(trajClient.getState().state_ == trajClient.getState().SUCCEEDED)
@@ -397,16 +421,6 @@ int main(int argc, char **argv)
 			{
 				ROS_WARN("Arm trajectory finished not successfully! (%s)",
 						trajClient.getState().toString().c_str());
-			}
-
-			if(inSimulation && gripperClient.getState().state_ == gripperClient.getState().SUCCEEDED)
-			{
-				ROS_INFO("Gripper trajectory finished successfully.");
-			}
-			else
-			{
-				ROS_WARN("Gripper trajectory finished not successfully! (%s)",
-						gripperClient.getState().toString().c_str());
 			}
 
 		}
