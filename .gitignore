@@ -9,7 +9,10 @@ ros_lfd_lat/bin/*
 ros_lfd_lat/html/*
 ros_lfd_lat/latex/*
 ros_lfd_lat/TaskSpaceData.mod/*
+ros_lfd_lat/JointSpace_Mean.mod/*
 ros_lfd_lat/lib/*
+ros_lfd_lat/_gtest_from_src/*
+ros_lfd_lat/cmake_install.cmake
 forward_kinematics_publisher/build/*
 forward_kinematics_publisher/.cproject
 forward_kinematics_publisher/.project
@@ -27,3 +30,5 @@ katana/build/*
 katana/bin/*
 COKE_apx.pdf
 JointSpace_Mean.mod/*
+*.mod/*
+

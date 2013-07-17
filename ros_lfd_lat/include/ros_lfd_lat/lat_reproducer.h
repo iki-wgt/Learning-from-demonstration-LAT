@@ -20,7 +20,7 @@
 #include "object_recognition_msgs/ObjectRecognitionAction.h"
 #include "std_srvs/Empty.h"
 #include "pr2_controllers_msgs/JointTrajectoryAction.h"
-
+#include "katana_msgs/JointMovementAction.h"
 
 #include <string>
 #include <vector>
@@ -39,6 +39,8 @@
 
 typedef actionlib::SimpleActionClient<object_recognition_msgs::ObjectRecognitionAction> Or_Client;
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
+typedef actionlib::SimpleActionClient<katana_msgs::JointMovementAction> MoveClient;
+//typedef actionlib::SimpleActionClient<katana>
 
 // the joint_state topic publishes at 25 Hz
 const double RECORDING_HZ = 25.0;
@@ -86,6 +88,8 @@ std::vector<std::string> getJointNames(bool inSimulation);
  * Callback for the /joint_state topic. Unsubscribes immediately after first call.
  */
 void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState);
+
+void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool inSimulation);
 
 int main(int argc, char **argv);
 

@@ -21,6 +21,7 @@ As a dependecy Eigen3 has to be located in /usr/local/include.
   <depend package="orocos_kdl"/>
   <depend package="kdl_parser"/>
   <depend package="joint_trajectory_action"/>
+  <depend package="katana_msgs" />
 </package>
 
 
