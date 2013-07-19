@@ -47,7 +47,9 @@ class RecognitionServer:
         
         # on pos 1
         robj = RecognizedObject()
-        robj.id.id = "IKEA-CUP-SOLBRAEND-BLUE"
+        robj.header.stamp = rospy.Time.now()
+        robj.header.frame_id = "base_link"
+        robj.type.key = "IKEA-CUP-SOLBRAEND-BLUE"
         robj.pose.header.stamp = rospy.Time.now()
         robj.pose.header.frame_id = "base_link"
         robj.pose.pose.pose.position.x = self.positions[posCup][0]
@@ -62,7 +64,9 @@ class RecognitionServer:
         
         # on pos 3
         robj = RecognizedObject()
-        robj.id.id = "COCA-COLA-CAN-250ML"
+        robj.header.stamp = rospy.Time.now()
+        robj.header.frame_id = "base_link"
+        robj.type.key = "COCA-COLA-CAN-250ML"
         robj.pose.header.stamp = rospy.Time.now()
         robj.pose.header.frame_id = "base_link"
         robj.pose.pose.pose.position.x = self.positions[posCoke][0]
