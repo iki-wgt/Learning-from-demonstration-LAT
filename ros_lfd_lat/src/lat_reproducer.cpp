@@ -49,7 +49,7 @@ void objectCallback(const actionlib::SimpleClientGoalState& state,
 	for (int i = 0; i < objCount; ++i) {
 		object obj = object();
 
-		obj.set_name(result->recognized_objects.objects[i].id.id);
+		obj.set_name(result->recognized_objects.objects[i].type.key);
 		obj.add_coordinate(
 			result->recognized_objects.objects[i].pose.pose.pose.position.x);
 		obj.add_coordinate(
@@ -348,9 +348,12 @@ int main(int argc, char **argv)
 			// now move the arm
 			// after the example from http://www.ros.org/wiki/pr2_controllers/Tutorials/Moving%20the%20arm%20using%20the%20Joint%20Trajectory%20Action
 			TrajClient gripperClient("katana_arm_controller/gripper_joint_trajectory_action");		//TODO: Katana specific
-			TrajClient trajClient("katana_arm_controller/joint_trajectory_action");		//TODO: Katana specific
+			ROS_INFO("after gripperClient");
+			TrajClient trajClient("katana_arm_controller/joint_trajectory_action", true);		//TODO: Katana specific
+ROS_INFO("after trajClient");
 
 			trajClient.waitForServer();
+			ROS_INFO("trajClient Server ready");
 			inSimulation = gripperClient.waitForServer(ros::Duration(0.01));
 			ROS_INFO("Action client ready.");
 

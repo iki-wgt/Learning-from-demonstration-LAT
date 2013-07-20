@@ -58,7 +58,7 @@ void objectCallback(const actionlib::SimpleClientGoalState& state,
 	for (int i = 0; i < objCount; ++i) {
 		object obj = object();
 
-		obj.set_name(result->recognized_objects.objects[i].id.id);
+		obj.set_name(result->recognized_objects.objects[i].type.key);
 		obj.add_coordinate(
 			result->recognized_objects.objects[i].pose.pose.pose.position.x);
 		obj.add_coordinate(
