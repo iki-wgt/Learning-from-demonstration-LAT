@@ -337,23 +337,19 @@ int main(int argc, char **argv)
 			}
 
 
-			for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
+			/*for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
 				for (unsigned int j = 0; j < reproducedTrajectory.size(); ++j) {
 					std::cout << reproducedTrajectory.at(j).at(i) << "\t";
 				}
 				std::cout << std::endl;
-			}
+			}*/
 
-			ROS_INFO("Create action client");
 			// now move the arm
 			// after the example from http://www.ros.org/wiki/pr2_controllers/Tutorials/Moving%20the%20arm%20using%20the%20Joint%20Trajectory%20Action
 			TrajClient gripperClient("katana_arm_controller/gripper_joint_trajectory_action");		//TODO: Katana specific
-			ROS_INFO("after gripperClient");
 			TrajClient trajClient("katana_arm_controller/joint_trajectory_action", true);		//TODO: Katana specific
-ROS_INFO("after trajClient");
 
 			trajClient.waitForServer();
-			ROS_INFO("trajClient Server ready");
 			inSimulation = gripperClient.waitForServer(ros::Duration(0.01));
 			ROS_INFO("Action client ready.");
 
