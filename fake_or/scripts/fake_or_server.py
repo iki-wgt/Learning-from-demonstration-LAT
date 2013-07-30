@@ -23,10 +23,15 @@ coke = -1
 class RecognitionServer:
     def __init__(self):
         
-        self.positions = [[0.398, 0.217, 0.331], 
-                          [0.495, 0.163, 0.342], 
-                          [0.537, -0.167, 0.340],
-                          [0.419, -0.196, 0.343]]
+        self.positions = [[0.526, 0.13, 0.237], 
+                          [0.61, 0.14, 0.25], 
+                          [0.58, -0.15, 0.259],
+                          [0.5, -0.11, 0.256]]
+        
+        #self.positions = [[0.398, 0.217, 0.331], 
+        #                  [0.495, 0.163, 0.342], 
+        #                  [0.537, -0.167, 0.340],
+        #                  [0.419, -0.196, 0.343]]
         #[[0.403, 0.208, 0.33], 
          #                 [0.527, 0.191, 0.33], 
           #                [0.57, -0.158, 0.37],
@@ -51,7 +56,7 @@ class RecognitionServer:
         robj.header.frame_id = "base_link"
         robj.type.key = "IKEA-CUP-SOLBRAEND-BLUE"
         robj.pose.header.stamp = rospy.Time.now()
-        robj.pose.header.frame_id = "base_link"
+        robj.pose.header.frame_id = "katana_base_link"
         robj.pose.pose.pose.position.x = self.positions[posCup][0]
         robj.pose.pose.pose.position.y = self.positions[posCup][1]
         robj.pose.pose.pose.position.z = self.positions[posCup][2]
@@ -68,7 +73,7 @@ class RecognitionServer:
         robj.header.frame_id = "base_link"
         robj.type.key = "COCA-COLA-CAN-250ML"
         robj.pose.header.stamp = rospy.Time.now()
-        robj.pose.header.frame_id = "base_link"
+        robj.pose.header.frame_id = "katana_base_link"
         robj.pose.pose.pose.position.x = self.positions[posCoke][0]
         robj.pose.pose.pose.position.y = self.positions[posCoke][1]
         robj.pose.pose.pose.position.z = self.positions[posCoke][2]

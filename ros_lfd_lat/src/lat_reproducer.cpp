@@ -45,17 +45,28 @@ std::vector<std::string> getAvailableTrajectories()
 void objectCallback(const actionlib::SimpleClientGoalState& state,
 		const object_recognition_msgs::ObjectRecognitionResultConstPtr& result)
 {
+	tf::TransformListener tfListener;
+	//tfListener.transformPoint()
+
 	int objCount = result->recognized_objects.objects.size();
 	for (int i = 0; i < objCount; ++i) {
 		object obj = object();
-
+		geometry_msgs::PointStamped pointStampedIn, pointStampedOut;
+		pointStampedIn.point = result->recognized_objects.objects[i].pose.pose.pose.position;
+		pointStampedIn.header.frame_id = result->recognized_objects.objects[i].pose.header.frame_id;
+		ROS_INFO("frame id %s", pointStampedIn.header.frame_id.c_str());
+		ROS_INFO("in coordinates: [%f, %f, %f]", pointStampedIn.point.x, pointStampedIn.point.y, pointStampedIn.point.z);
+		ros::Duration waitTimeout(3.0);
+		tfListener.waitForTransform(OBJECT_TARGET_FRAME, pointStampedIn.header.frame_id, pointStampedIn.header.stamp, waitTimeout);
+		tfListener.transformPoint(OBJECT_TARGET_FRAME, pointStampedIn, pointStampedOut);
+		ROS_INFO("pointStampedOut frame id %s", pointStampedOut.header.frame_id.c_str());
 		obj.set_name(result->recognized_objects.objects[i].type.key);
-		obj.add_coordinate(
-			result->recognized_objects.objects[i].pose.pose.pose.position.x);
-		obj.add_coordinate(
-			result->recognized_objects.objects[i].pose.pose.pose.position.y);
-		obj.add_coordinate(
-			result->recognized_objects.objects[i].pose.pose.pose.position.z);
+		obj.add_coordinate(pointStampedOut.point.x);
+			//result->recognized_objects.objects[i].pose.pose.pose.position.x);
+		obj.add_coordinate(pointStampedOut.point.y);
+			//result->recognized_objects.objects[i].pose.pose.pose.position.y);
+		obj.add_coordinate(pointStampedOut.point.z);
+			//result->recognized_objects.objects[i].pose.pose.pose.position.z);
 
 		objects.push_back(obj);
 

@@ -395,6 +395,12 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		// Adding the 6th and 7th angle: the 6th angle from the mean of JM[5][i]
 		(*LAT)[5].push_back( (*JM)[5][pointNo] );	//TODO: Katana specific!
 		(*LAT)[6].push_back( (*JM)[6][pointNo] );
+
+		if(limit_violation >= tra_size)
+		{
+			ROS_ERROR("Too many limit violations!");
+			return false;
+		}
 	}
 
 	MatrixXd LAT_tmp(dofJac,tra_size - 1);

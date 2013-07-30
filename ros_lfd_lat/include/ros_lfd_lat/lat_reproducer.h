@@ -20,6 +20,8 @@
 #include "std_srvs/Empty.h"
 #include "pr2_controllers_msgs/JointTrajectoryAction.h"
 #include "katana_msgs/JointMovementAction.h"
+#include "tf/transform_listener.h"
+#include "geometry_msgs/PointStamped.h"
 
 #include <string>
 #include <vector>
@@ -47,6 +49,7 @@ const unsigned int THINNING_FACTOR = 10;
 const double REPRODUCE_HZ = RECORDING_HZ / THINNING_FACTOR;
 const double TIME_FROM_START = 3;
 const unsigned int GRIPPER_JOINT_COUNT = 2;
+const std::string OBJECT_TARGET_FRAME = "/katana_base_link";
 
 std::vector<std::string> getAvailableTrajectories();
 
@@ -89,6 +92,8 @@ std::vector<std::string> getJointNames(bool inSimulation);
 void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState);
 
 void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool inSimulation);
+
+
 
 int main(int argc, char **argv);
 
