@@ -2,7 +2,6 @@
 #include "dtw_leatra.hh"
 // #include "kinematics.hh"
 #include "draw.hh"
-#include <time.h>
 
 //#define DRAW_GRAPHS
 
@@ -68,27 +67,12 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
   ndmapSet mean_JS;
   ndmapSetGroup model;
   
-  boost::timer timer;
-  
   if(!useInterim || !isInterimPrepared())
   {
-	  //TODO: Eventually not needed with the fake object recognition
-	  // bringing new objects in Katana Coordinate System:
-	  /*for(int i = 0; i < obj.size(); i++){
-		obj[i].subtract_kate_offset();
-	  }*/
-
 	  ROS_INFO("[Leatra reproduce] reading trajectories from the file: %s%s",path.c_str(), task_name.c_str());
 
 	  // Reading trajectories from file
 	  JS = lit.read_trajectories( task_name, path );
-	  ROS_INFO("Reading trajectories %.12f", timer.elapsed());
-	  timer.restart();
-	  //TODO: Eventually not needed with the fake object recognition
-	  // bringing objects in trajectories in Katana Coordinate System:
-	  /*for(int i = 0; i < JS.size(); i++){
-		JS[i].subtract_kate_offset();
-	  }*/
 
 	  // Shortening all trajectories to the size of the shortest:
 	  // Getting the size of the shortest trajectory
@@ -108,8 +92,6 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 		JS[i].map.thinning( tra_length );
 	  }
 
-	  ROS_INFO("Shorten trajectories %.12f", timer.elapsed());
-	  timer.restart();
 
 	  //lit.write_trajectories(JS, "JS_no_warp", "DEBUG/");
 	  ROS_INFO("[Leatra reproduce] warping the trajectories in joint space.");
@@ -119,18 +101,13 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 	  JS = W.warp_in_task_space(JS);
 	  //lit.write_trajectories(JS, "JS_warp", "DEBUG/");
 
-	  ROS_INFO("DTW %.12f", timer.elapsed());
-	  timer.restart();
 
-	  /* Sorting not needed
 	  // Sorting objects!
 	  for(unsigned int i = 0; i < JS.size(); i++){
 		JS[i].set_obj_order(&obj);
 	  }
 
-	  ROS_INFO("Sorting objects %.12f", timer.elapsed());
-	  timer.restart();
-	  */
+
 
 	  // Creating task space trajectories
 	  std::deque< trajectory_lat > TS( JS.begin(), JS.end());
@@ -143,9 +120,6 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 		}
 	  }
 
-	  ROS_INFO("Creating task space trajectories %.12f", timer.elapsed());
-	  timer.restart();
-
 	  //lit.write_trajectories(TS, "TS_no_warp", "DEBUG/");
 	  ROS_INFO("[Leatra reproduce] Calculating mean-trajectory in joint space.");
 	  // Calculating mean-trajectory in joint space - containing all 6 angles (5 + gripper)
@@ -155,15 +129,12 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 	  }
 	  mean_JS = apx.standard_deviation(set, true); // having all 6 angles
 
-	  ROS_INFO("mean JS %.12f", timer.elapsed());
-	  timer.restart();
 
 #ifdef DRAW_GRAPHS
 	  mean_JS.set_name("JointSpace_Mean");
 	  lit.write_ndmapSet(mean_JS);
 #endif
 
-	  timer.restart();
 
 	  std::cout << "[Leatra reproduce] Calculating mean-trajectory in task space." << std::endl;
 	  // Calculating mean-trajectory in task space
@@ -191,9 +162,6 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
   model.add_offset(obj);
   ndmapSet mean_TS = apx.constraint_fusion( model, true );
 
-  ROS_INFO("mean TS %.12f", timer.elapsed());
-  timer.restart();
-
   ROS_INFO("After constraint fusion");
 
 #ifdef DRAW_GRAPHS
@@ -207,7 +175,6 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
   graph.graph_std(model2);
 #endif
 
-  timer.restart();
 
   std::cout << "[Leatra reproduce] joining trajectories from task space and joint space." << std::endl;
   
@@ -226,9 +193,6 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 	  std::deque< std::deque< double > > emptyLAT;
 	  return emptyLAT;
   }
-  
-  ROS_INFO("optimize %.12f", timer.elapsed());
-  timer.restart();
 
   return LAT;
 }
