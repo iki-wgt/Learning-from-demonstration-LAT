@@ -22,11 +22,11 @@
    respawn="false" output="screen" />
 
   <node name="spawn_coke_can" pkg="gazebo" type="spawn_model" 
-   args="-urdf -file $(find katana_arm_gazebo)/urdf/coke_can.urdf -model COCA-COLA-CAN-250ML -wait 'table_1' -x 0.5 -y -0.2 -z 0.55" 
+   args="-urdf -file $(find katana_arm_gazebo)/urdf/coke_can.urdf -model COCA-COLA-CAN-250ML -wait 'table_1' -x 0.5 -y -0.2 -z 0.61" 
    respawn="false" output="screen" />
    
   <node name="spawn_ikea_cup" pkg="gazebo" type="spawn_model"
-   args="-urdf -file $(find ros_lfd_lat)/urdf/ikea_cup.urdf -model IKEA-CUP-SOLBRAEND-BLUE -wait 'table_1' -x 0.5 -y 0.3 -z 0.55" 
+   args="-urdf -file $(find ros_lfd_lat)/urdf/ikea_cup.urdf -model IKEA-CUP-SOLBRAEND-BLUE -wait 'table_1' -x 0.5 -y 0.3 -z 0.60" 
    respawn="false" output="screen" />
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
@@ -63,5 +63,8 @@
       <param name="max_vel" value="2.646220" />
     </node>
   </group>
+  
+  <!-- Object recognition -->
+  <include file="$(find gazebo_object_recognition_server)/server.launch" />
 </launch>
 

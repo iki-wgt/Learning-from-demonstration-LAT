@@ -3,7 +3,7 @@
 // #include "kinematics.hh"
 #include "draw.hh"
 
-//#define DRAW_GRAPHS
+#define DRAW_GRAPHS
 
 /**
  *  Check, if task specified by the string _task_name at the directory "path" exists.
@@ -82,6 +82,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 		  tra_length = JS[i].map.map_is_consistent();
 		else if(JS[i].map.map_is_consistent() < tra_length)
 		  tra_length = JS[i].map.map_is_consistent();
+
 		if(tra_length < 1){
 			ROS_ERROR("[Leatra Error reproduce] not all trajectories are consistent!");
 		}

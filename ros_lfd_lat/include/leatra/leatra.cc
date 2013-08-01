@@ -5,15 +5,10 @@
 #include "ros/ros.h"
 #include <kdl/kdl.hpp>
 #include <kdl/chain.hpp>
-#include <kdl/chainfksolver.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
-#include <kdl/frames_io.hpp>
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/tree.hpp>
-#include <kdl/treefksolver.hpp>
 #include <kdl/treefksolverpos_recursive.hpp>
-#include <kdl/utilities/utility.h>
-
 
 /**
  *      The global variables maps_exist, sets_exist and groups_exist are used
@@ -955,10 +950,10 @@ bool ndmap::joint_to_task_space(){
   int el = map_is_consistent();
   if(el < 1) return false;
 
-  int dim = get_dim();
+  int dim = get_dim() - 2;	// TODO: Make nicer
 
   std::deque< double > init;
-  //std::deque< std::deque<double> > task_space(6 ,init); // Three dimensions for x,y,z and 3 for rotation
+
   std::deque< std::deque<double> > task_space(3 ,init);		// omit rotation
 
   std::string tip_name = "katana_gripper_tool_frame";
@@ -978,14 +973,17 @@ bool ndmap::joint_to_task_space(){
   	return false;
   }
 
+  KDL::Chain chain;
+  my_tree.getChain("katana_base_link", "katana_gripper_tool_frame", chain);
+
   // Create solver based on kinematic tree
-  KDL::TreeFkSolverPos_recursive fksolver = KDL::TreeFkSolverPos_recursive(my_tree);
+  KDL::ChainFkSolverPos_recursive fksolver = KDL::ChainFkSolverPos_recursive(chain);
 
   // for every captured joint state
   for(int i=0; i < el; i++){
 	  KDL::JntArray jointpositions = KDL::JntArray(dim);
 
-	  for (int j = 0; j < dim; ++j) {
+	  for (int j = 0; j < dim ; ++j) {
 		jointpositions(j) = map[j][i];
 	  }
 
@@ -994,22 +992,12 @@ bool ndmap::joint_to_task_space(){
 
 	  // Calculate forward position kinematics
 	  bool kinematics_status;
-	  kinematics_status = fksolver.JntToCart(jointpositions,cartpos, tip_name);
+	  kinematics_status = fksolver.JntToCart(jointpositions, cartpos);
 	  if(kinematics_status>=0){
 		  // success now copy the result
 		  for(unsigned int j=0; j < 3; j++){
 			  task_space[j].push_back(cartpos.p[j]);
 		  }
-		  //double alpha, beta, gamma;
-		  //cartpos.M.GetEulerZYX(alpha, beta, gamma);
-		  // orientation
-		  /*for(unsigned int j=3; j < 6; j++){
-			  task_space[j].push_back((cartpos.M.GetRot())(j - 3));		// TODO: Check if this orientation is the right one
-			  //task_space[j].push_back((cartpos.M.)(j - 3));
-		  }*/
-		  //task_space[3].push_back(alpha);
-		  //task_space[4].push_back(beta);
-		  //task_space[5].push_back(gamma);
 	  }else{
 		  ROS_ERROR("Could not calculate forward kinematics!");
 	  }

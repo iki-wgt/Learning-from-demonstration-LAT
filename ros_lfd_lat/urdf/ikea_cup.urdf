@@ -3,19 +3,19 @@
     <inertial>
       <mass value="1.0" />
       <!-- center of mass (com) is defined w.r.t. link local coordinate system -->
-      <origin xyz="0 0 0.06" /> 
+      <origin xyz="0 0 -0.02" /> 
       <inertia  ixx="0.01" ixy="0.0"  ixz="0.0"  iyy="0.01"  iyz="0.0"  izz="0.001" />
     </inertial>
     <visual>
       <!-- visual origin is defined w.r.t. link local coordinate system -->
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 -0.05" rpy="0 0 0" />
       <geometry>
         <mesh filename="package://ros_lfd_lat/meshes/ikea_cup.stl" scale="0.001 0.001 0.0008" />
       </geometry>
     </visual>
     <collision>
       <!-- collision origin is defined w.r.t. link local coordinate system -->
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 -0.05" rpy="0 0 0" />
       <geometry>
         <mesh filename="package://ros_lfd_lat/meshes/ikea_cup.stl" scale="0.001 0.001 0.0008" />
       </geometry>

@@ -237,7 +237,7 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 	unsigned int tra_size = (*TM)[0].size();
 	unsigned int dofs = JM->size();
 	unsigned int dofJac = dofs - 2;		// exclude the two angles from the gripper	//TODO: Katana specific
-	int limit_violation = 0;
+	unsigned int limit_violation = 0;
 	Matrix<double, 5,2> limit;	//TODO: these limits have to be read out of the robot description
   limit <<   -3.025528, 2.891097,
 		  -0.135228, 2.168572,
@@ -281,11 +281,11 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 		return false;
 	}
 
-	// Create solver based on kinematic tree
-	KDL::TreeFkSolverPos_recursive fksolver = KDL::TreeFkSolverPos_recursive(my_tree);
-
 	KDL::Chain chain;		// create chain
 	my_tree.getChain(root_name, tip_name, chain);
+
+	// Create solver based on kinematic tree
+	KDL::ChainFkSolverPos_recursive fksolver = KDL::ChainFkSolverPos_recursive(chain);
 
 	KDL::ChainJntToJacSolver jacSolver = KDL::ChainJntToJacSolver(chain);
 
@@ -321,13 +321,13 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		// Calculate forward position kinematics
 		int kinematics_status;
-		kinematics_status = fksolver.JntToCart(jntPositions, cartpos, tip_name);
+
+		kinematics_status = fksolver.JntToCart(jntPositionsJac, cartpos);
 		if(kinematics_status>=0){
 			// success now copy the result
 			for (unsigned int i = 0; i < 3; ++i) {
 				x_old(i) = cartpos.p[i];
 			}
-
 		}
 		else
 		{
@@ -358,20 +358,12 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 
 		theta_new =  theta_old + Jinv * d_x + alpha * ((I - (Jinv * J)) * d_theta);
 
-		/*std::cout << "theta_old\n" << theta_old << "\n" << std::endl;
-		std::cout << "d_x\n" << d_x << "\n" << std::endl;
-		std::cout << "J\n" << J << "\n" << std::endl;
-		std::cout << "Jinv\n" << Jinv << "\n" << std::endl;
-		std::cout << "Leatra Jacobi\n" << Jacobi_lat_s(theta_old.topRows(4)) << "\n" << std::endl;
-		VectorXd theta_tmp(dofJac);
-		theta_tmp = Jinv * d_x;
-		std::cout << "Jinv * d_x\n" << theta_tmp << "\n" << std::endl;
-		theta_tmp = alpha * ((I - (Jinv * J)) * d_theta);
-		std::cout << "alpha * ((I - (Jinv * J)) * d_theta)\n" << theta_tmp << "\n" << std::endl;*/
-
-		for(unsigned int jointNo = 0; jointNo < dofJac; jointNo++){
+		for(unsigned int jointNo = 0; jointNo < dofJac; jointNo++)
+		{
 			(*LAT)[jointNo].push_back( (double)theta_new(jointNo) );
-			if((*LAT)[jointNo][pointNo] > limit(jointNo,1)){
+
+			if((*LAT)[jointNo][pointNo] > limit(jointNo,1))
+			{
 				ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d",
 						(*LAT)[jointNo][pointNo],
 						limit(jointNo,1),
@@ -379,18 +371,20 @@ bool optimize_TJ(std::deque< std::deque<double> >* LAT,
 						pointNo);
 				(*LAT)[jointNo][pointNo] = limit(jointNo,1);
 				limit_violation++;
-       }
-       if((*LAT)[jointNo][pointNo] < limit(jointNo,0)){
-    	   ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d",
-    			   (*LAT)[jointNo][pointNo],
-    			   limit(jointNo,0),
-    			   jointNo,
-    			   pointNo);
+			}
 
-    	   (*LAT)[jointNo][pointNo] = limit(jointNo,0);
-    	   limit_violation++;
-       }
-	  }
+		   if((*LAT)[jointNo][pointNo] < limit(jointNo,0))
+		   {
+			   ROS_WARN("Limit violation value: %f, limit: %f, joint: %d, step: %d",
+					   (*LAT)[jointNo][pointNo],
+					   limit(jointNo,0),
+					   jointNo,
+					   pointNo);
+
+			   (*LAT)[jointNo][pointNo] = limit(jointNo,0);
+			   limit_violation++;
+		   }
+		}
 
 		// Adding the 6th and 7th angle: the 6th angle from the mean of JM[5][i]
 		(*LAT)[5].push_back( (*JM)[5][pointNo] );	//TODO: Katana specific!

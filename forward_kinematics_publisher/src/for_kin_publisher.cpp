@@ -14,6 +14,7 @@
 #include <kdl/utilities/utility.h>
 
 KDL::TreeFkSolverPos_recursive* fksolver = NULL;
+KDL::ChainFkSolverPos_recursive* chainfksolver = NULL;
 KDL::Tree my_tree;
 
 void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
@@ -43,7 +44,8 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 	//double roll, pitch, yaw;
 	// Calculate forward position kinematics
 	int kinematics_status;
-	kinematics_status = fksolver->JntToCart(jointpositions,cartpos, "katana_gripper_tool_frame");
+	//kinematics_status = fksolver->JntToCart(jointpositions,cartpos, "katana_gripper_tool_frame");
+	kinematics_status = chainfksolver->JntToCart(jointpositionsJac,cartpos);
 	if(kinematics_status>=0){
 		std::cout << cartpos.p << std::endl;
 
@@ -58,7 +60,11 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 	// create Jacobian
 	KDL::Chain chain;		// create chain
 	my_tree.getChain("katana_base_link", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
-
+for (unsigned int segmentIdx = 0; segmentIdx < chain.getNrOfSegments(); ++segmentIdx) {
+		KDL::Segment segment = chain.getSegment(segmentIdx);
+		ROS_INFO("Segment Idx: %d, name: %s", segmentIdx, segment.getName().c_str());
+		ROS_INFO("[%f, %f, %f]", segment.getFrameToTip().p.x(), segment.getFrameToTip().p.y(),segment.getFrameToTip().p.z());
+	}
 	KDL::ChainJntToJacSolver jacSolver = KDL::ChainJntToJacSolver(chain);
 	KDL::Jacobian kdlJacobian(dofJac);
 
@@ -82,9 +88,11 @@ int main(int argc, char **argv)
 	ROS_ERROR("Failed to construct kdl tree");
 	return 1;
  }
-
+KDL::Chain chain;		// create chain
+	my_tree.getChain("katana_base_link", "katana_gripper_tool_frame", chain);	//TODO: Katana specific
  // Create solver based on kinematic tree
  fksolver = new KDL::TreeFkSolverPos_recursive(my_tree);
+ chainfksolver = new KDL::ChainFkSolverPos_recursive(chain);
 
 
   
