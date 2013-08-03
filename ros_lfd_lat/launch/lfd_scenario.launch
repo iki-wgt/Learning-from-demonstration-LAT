@@ -22,7 +22,7 @@
    respawn="false" output="screen" />
 
   <node name="spawn_coke_can" pkg="gazebo" type="spawn_model" 
-   args="-urdf -file $(find katana_arm_gazebo)/urdf/coke_can.urdf -model COCA-COLA-CAN-250ML -wait 'table_1' -x 0.5 -y -0.2 -z 0.61" 
+   args="-urdf -file $(find katana_arm_gazebo)/urdf/coke_can.urdf -model COCA-COLA-CAN-250ML -wait 'table_1' -x 0.5 -y -0.2 -z 0.66" 
    respawn="false" output="screen" />
    
   <node name="spawn_ikea_cup" pkg="gazebo" type="spawn_model"
