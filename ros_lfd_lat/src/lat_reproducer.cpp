@@ -13,27 +13,42 @@ std::vector<double> jointPositions;
 std::vector<double> gripperJointPositions;
 
 
-std::vector<std::string> getAvailableTrajectories()
+std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir)
 {
 	std::string filename;
 
 	std::vector<std::string> trajectories;
-	std::string postfix = ".tra";	//every trajectory directory ends with .tra
+	const std::string POSTFIX = ".tra";	//every trajectory directory ends with .tra
 
-	boost::filesystem::path homeDir = getHomeDir();
+	boost::filesystem::path trajDir;
+
+	if(trajectoryDir == USE_USER_HOME_STRING)
+	{
+		trajDir = getHomeDir();
+	}
+	else
+	{
+		trajDir = boost::filesystem::path(trajectoryDir);
+
+		if(!boost::filesystem::is_directory(trajDir))
+		{
+			ROS_ERROR("%s is not a directory! (Will use home dir instead)", trajectoryDir.c_str());
+			trajDir = getHomeDir();
+		}
+	}
 
 	boost::filesystem::directory_iterator endIter;
 
-	for (boost::filesystem::directory_iterator dirIter(homeDir); dirIter != endIter; ++dirIter)
+	for (boost::filesystem::directory_iterator dirIter(trajDir); dirIter != endIter; ++dirIter)
 	{
 		if(boost::filesystem::is_directory(dirIter->path()))
 		{
 			if(boost::algorithm::ends_with(
 					dirIter->path().filename().c_str(),
-					postfix))
+					POSTFIX))
 			{
 				filename = dirIter->path().filename().c_str();
-				boost::algorithm::erase_tail(filename, postfix.size());
+				boost::algorithm::erase_tail(filename, POSTFIX.size());
 				trajectories.push_back(filename);
 			}
 		}
@@ -239,59 +254,112 @@ void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool
 	}
 }
 
-int main(int argc, char **argv)
+std::string readTrajectoryFromUser(std::string trajectoryDir)
 {
-	ros::init(argc, argv, "lat_reproducer");
-
-	ROS_INFO("lat_reproducer started");
-
-	lfd lfd;
 	unsigned int traNumber = -2;
 	std::string traNumberStr = "-1";
 	std::string trajectoryName = "default_trajectory_name";
 
+	ROS_INFO("Available trajectories:");
+	std::vector<std::string> trajectories = getAvailableTrajectories(trajectoryDir);
+
+	for (unsigned int i = 0; i < trajectories.size(); ++i) {
+			ROS_INFO_STREAM(i << ") " << trajectories.at(i).c_str());
+	}
+
+	ROS_INFO("Which trajectory should be reproduced? (Select by number)");
+	getline(std::cin, traNumberStr);
+
+	try
+	{
+		traNumber = boost::lexical_cast<unsigned int>(traNumberStr);
+
+		if (traNumber < trajectories.size())
+		{
+			trajectoryName = trajectories.at(traNumber);
+		}
+		else
+		{
+			ROS_WARN("Selection out of range!");
+			trajectoryName = "out_of_range_selection";
+		}
+	}
+	catch (boost::bad_lexical_cast &)
+	{
+		ROS_WARN("No valid input!");
+		trajectoryName = "no_valid_selection";
+	}
+	catch (...)
+	{
+		ROS_ERROR("Unhandled exeption in readTrajectoryFromUser!");
+		ROS_BREAK();
+	}
+
+	return trajectoryName;
+}
+
+void printHelpMessage()
+{
+	ROS_INFO(
+		"Usage: ./lat_reproducer <object tracking topic> <trajectory name> <trajectory dir> <draw graph>"
+		" <object shift threshold> <arm controller>"
+		);
+	ROS_INFO("or roslaunch ros_lfd_lat lat_reproducer [trajectory_name:=<trajectory name>]");
+}
+
+int main(int argc, char **argv)
+{
+	ros::init(argc, argv, "lat_reproducer");
+
+	if(argc != (NO_OF_ARGS + 1))	// +1 because argv[0] is the program name
+	{
+		ROS_ERROR("Not enough arguments provided!");
+		printHelpMessage();
+
+		return EXIT_SUCCESS;
+	}
+
+	ROS_INFO("lat_reproducer started");
+
+	lfd lfd;
+
+
+
 	// flag that determines whether the program runs on gazebo or not
 	bool inSimulation = false;
 
-	unsigned int armJointCount = 999;
+	unsigned int armJointCount = ARM_JOINT_COUNT_NOT_YET_DEFINED;
 
-	if(argc != 2)
+	//////////////////////////////////////////////////////////////////////
+	// parse arguments
+	// use this topic to receive object tracking data
+	std::string objectTrackingTopic(argv[OBJECT_TRACKING_TOPIC_ARG_IDX]);
+
+	// specifies the folder where the trajectories are stored (default user_home)
+	std::string trajectoryDir(argv[TRAJECOTRY_DIR_ARG_IDX]);
+
+	// reproduce this trajectory
+	std::string trajectoryName(argv[TRAJECTORY_NAME_ARG_IDX]);
+	if(trajectoryName == USE_USER_SELECT_STRING)
 	{
-		ROS_INFO("Available trajectories:");
-		std::vector<std::string> trajectories = getAvailableTrajectories();
-
-		for (unsigned int i = 0; i < trajectories.size(); ++i) {
-				ROS_INFO_STREAM(i << ") " << trajectories.at(i).c_str());
-		}
-
-		ROS_INFO("Which trajectory should be reproduced? (Select by number)");
-		getline(std::cin, traNumberStr);
-
-		try
-		{
-			traNumber = boost::lexical_cast<unsigned int>(traNumberStr);
-
-			if (traNumber < trajectories.size())
-			{
-				trajectoryName = trajectories.at(traNumber);
-			}
-			else
-			{
-				ROS_WARN("Selection out of range!");
-				trajectoryName = "out_of_range_selection";
-			}
-		}
-		catch (boost::bad_lexical_cast &)
-		{
-			ROS_WARN("No valid input!");
-			trajectoryName = "not_valid_selection";
-		}
-
+		trajectoryName = readTrajectoryFromUser(trajectoryDir);
 	}
-	else
+
+	// draw the reproduction diagramm or not
+	bool drawGraph = true;
+	if(strcmp(argv[DRAW_GRAPH_ARG_IDX], "false"))
 	{
-		trajectoryName = argv[1];
+		drawGraph = false;
 	}
+
+	// threshold an object has to move, so that it is recognized
+	double objectShiftThreshold = atof(argv[OBJECT_SHIFT_THRESHOLD_ARG_IDX]);
+
+	// use this namespace for the trajectory action and so on
+	std::string armController(argv[ARM_CONTROLLER_ARG_IDX]);
+
+	// finished parsing arguments
+	////////////////////////////////////////////////////////////////////////
 
 	ROS_INFO("Selected trajectory: %s (home dir: %s)", trajectoryName.c_str(), getHomeDir().c_str());
 
@@ -322,7 +390,7 @@ int main(int argc, char **argv)
 			ROS_ERROR("State text: %s",
 					objectClient.getState().getText().c_str());
 
-			return 1;
+			return EXIT_FAILURE;
 		}
 
 		ROS_INFO("Finished object recognition");
@@ -344,7 +412,7 @@ int main(int argc, char **argv)
 			ROS_INFO("Trajectory length: %i", (int)(reproducedTrajectory.size()));
 			if(reproducedTrajectory.size() == 0)
 			{
-				return 1;
+				return EXIT_FAILURE;
 			}
 
 
@@ -380,19 +448,6 @@ int main(int argc, char **argv)
 				gripperGoal.trajectory.points.resize(reproducedTrajectory[0].size()/* + 1*/);
 
 				armJointCount = 5;
-
-				/*gripperGoal.trajectory.points[0].positions.resize(GRIPPER_JOINT_COUNT);
-				gripperGoal.trajectory.points[0].velocities.resize(GRIPPER_JOINT_COUNT);
-				gripperGoal.trajectory.points[0].time_from_start = ros::Duration(TIME_FROM_START);
-
-				for (unsigned int jointNo = 0; jointNo < GRIPPER_JOINT_COUNT; ++jointNo)
-				{
-					gripperGoal.trajectory.points[0].positions[jointNo] =
-						gripperJointPositions[jointNo];
-
-					// velocity not needed, so set it to zero
-					gripperGoal.trajectory.points[0].velocities[jointNo] = 0.0;
-				}*/
 			}
 			else
 			{
@@ -402,19 +457,7 @@ int main(int argc, char **argv)
 
 			ROS_INFO("Copy the joint positions");
 
-			/*// the first waypoint has to be the current joint state
-			// otherwise the joint trajectory action fails
-			goal.trajectory.points[0].positions.resize(armJointCount);
-			goal.trajectory.points[0].velocities.resize(armJointCount);
-			goal.trajectory.points[0].time_from_start = ros::Duration(TIME_FROM_START);
-
-			for (unsigned int jointNo = 0; jointNo < armJointCount; ++jointNo)
-			{
-				goal.trajectory.points[0].positions[jointNo] =
-					jointPositions[jointNo];
-			}*/
-
-			// copy the other waypoints
+			// copy the waypoints
 			for (unsigned int pointNo = 0/*1*/; pointNo </*=*/ reproducedTrajectory[0].size(); ++pointNo)
 			{
 				goal.trajectory.points[pointNo].

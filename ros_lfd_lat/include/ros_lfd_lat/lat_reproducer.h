@@ -37,21 +37,21 @@
 #include "../leatra/lfd.hh"
 #include "../leatra/stringhelp.hh"
 #include "ros_lfd_lat/helpers.h"
+#include "ros_lfd_lat/LatConstants.h"
 
 typedef actionlib::SimpleActionClient<object_recognition_msgs::ObjectRecognitionAction> Or_Client;
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 typedef actionlib::SimpleActionClient<katana_msgs::JointMovementAction> MoveClient;
 //typedef actionlib::SimpleActionClient<katana>
 
-// the joint_state topic publishes at 25 Hz
-const double RECORDING_HZ = 25.0;
-const unsigned int THINNING_FACTOR = 10;
-const double REPRODUCE_HZ = RECORDING_HZ / THINNING_FACTOR;
-const double TIME_FROM_START = 3;
-const unsigned int GRIPPER_JOINT_COUNT = 2;
-const std::string OBJECT_TARGET_FRAME = "/katana_base_link";
-
-std::vector<std::string> getAvailableTrajectories();
+/**
+ * Returns a vector with available trajectory names.
+ *
+ * @param trajectoryDir Directory where the trajectories are located. With USE_USER_HOME_STRING the users home dir is
+ * taken automatically.
+ * @return Vector with the trajectory names.
+ */
+std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir = USE_USER_HOME_STRING);
 
 /**
  * \brief Callback function for the object recognition.
@@ -91,8 +91,24 @@ std::vector<std::string> getJointNames(bool inSimulation);
  */
 void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState);
 
+/**
+ * Moves the robot to the first position of the given trajectory.
+ *
+ * @param trajectroy The trajectory to its first point the robot should move.
+ * @param inSimulutaion Flag that determines, whether the program is launched in Gazebo or not.
+ */
 void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool inSimulation);
 
+/**
+ * Interactive selection of the trajectory.
+ * Lists the existing trajectories to the screen and prompts the user to enter the number of the trajectory.
+ */
+std::string readTrajectoryFromUser(std::string trajectoryDir = USE_USER_HOME_STRING);
+
+/**
+ * Prints a help message.
+ */
+void printHelpMessage();
 
 
 int main(int argc, char **argv);
