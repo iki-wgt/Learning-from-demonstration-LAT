@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- This topic is used to get the object positions.  -->
+  <arg name="object_tracking_topic" default="ar_pose_marker" />
+  
+  <!-- Reproduce this trajectory. For an interactive selection define 'user_select'. To override launch with 'roslaunch ros_lfd_lat lat_reproduce trajectory_name:=cokeCup2' -->
+  <arg name="trajectory_name" default="user_select" />
+  
+  <!-- Location of the trajectory. Define 'user_home' to use the users home directory. -->
+  <arg name="trajectory_dir" default="user_home" />
+  
+  <!-- Draw a graph of the reproduction or not.  -->
+  <arg name="draw_graph" default="false" />
+  
+  <!-- Detect an object shift, if an object is being moved more than this threshold. (In meters).  -->
+  <arg name="object_shift_threshold" default="0.01" />
+  
+  <!-- Use this arm controller. (e.g. for katana_arm_controller/joint_trajectory_action) -->
+  <arg name="arm_controller" default="katana_arm_controller" />
+  
+  <node name="lat_reproducer" pkg="ros_lfd_lat" type="lat_reproducer" respawn="false" output="screen" args="$(arg object_tracking_topic) $(arg trajectory_name) $(arg trajectory_dir) $(arg draw_graph) $(arg object_shift_threshold) $(arg arm_controller)" />
+</launch>
+
