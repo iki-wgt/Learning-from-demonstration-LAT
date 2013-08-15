@@ -28,4 +28,14 @@ const unsigned int DRAW_GRAPH_ARG_IDX				= 4;
 const unsigned int OBJECT_SHIFT_THRESHOLD_ARG_IDX	= 5;
 const unsigned int ARM_CONTROLLER_ARG_IDX			= 6;
 
+const unsigned int NO_OF_OBJECTS = 2;
+const unsigned int IKEA_CUP_SOLBRAEND_BLUE_ID = 1;
+const unsigned int COCA_COLA_CAN_250ML_ID = 5;
+const std::string OBJECT_NAMES[] = {"unused!!!",
+		"IKEA-CUP-SOLBRAEND-BLUE",
+		"unused!!!",
+		"unused!!!",
+		"unused!!!",
+		"COCA-COLA-CAN-250ML"};
+
 #endif /* LATCONSTANTS_H_ */

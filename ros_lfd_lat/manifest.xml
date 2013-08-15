@@ -23,6 +23,7 @@ As a dependecy Eigen3 has to be located in /usr/local/include.
   <depend package="joint_trajectory_action"/>
   <depend package="katana_msgs" />
   <depend package="tf" />
+  <depend package="ar_track_alvar" />
 </package>
 
 

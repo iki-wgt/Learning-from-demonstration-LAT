@@ -306,9 +306,22 @@ void printHelpMessage()
 	ROS_INFO("or roslaunch ros_lfd_lat lat_reproducer [trajectory_name:=<trajectory name>]");
 }
 
+void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
+{
+	for (unsigned int markerIdx = 0; markerIdx < markers->markers.size(); ++markerIdx) {
+		ar_track_alvar::AlvarMarker marker = markers->markers[markerIdx];
+		if(marker.id == IKEA_CUP_SOLBRAEND_BLUE_ID || marker.id == COCA_COLA_CAN_250ML_ID)
+		{
+			ROS_INFO("Got marker of %s", OBJECT_NAMES[marker.id].c_str());
+		}
+	}
+
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "lat_reproducer");
+	ros::NodeHandle nodeHandle;
 
 	if(argc != (NO_OF_ARGS + 1))	// +1 because argv[0] is the program name
 	{
@@ -385,6 +398,8 @@ int main(int argc, char **argv)
 		ROS_INFO("Waiting for object recognition server");
 		objectClient.waitForServer();
 		ROS_INFO("Object recognition server ready");
+
+		ros::Subscriber objectTrackingSubscriber = nodeHandle.subscribe(objectTrackingTopic, 1, objectTrackerCallback);
 
 		// get objects
 		objectClient.sendGoal(

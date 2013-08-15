@@ -22,6 +22,7 @@
 #include "katana_msgs/JointMovementAction.h"
 #include "tf/transform_listener.h"
 #include "geometry_msgs/PointStamped.h"
+#include "ar_track_alvar/AlvarMarkers.h"
 
 #include <string>
 #include <vector>
@@ -109,6 +110,11 @@ std::string readTrajectoryFromUser(std::string trajectoryDir = USE_USER_HOME_STR
  * Prints a help message.
  */
 void printHelpMessage();
+
+/**
+ * Callback for theobject tracking topic.
+ */
+void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& marker);
 
 
 int main(int argc, char **argv);
