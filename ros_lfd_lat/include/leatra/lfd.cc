@@ -3,8 +3,6 @@
 // #include "kinematics.hh"
 #include "draw.hh"
 
-#define DRAW_GRAPHS
-
 /**
  *  Check, if task specified by the string _task_name at the directory "path" exists.
  *  If it exists, the return value is true.
@@ -58,7 +56,7 @@ bool lfd::save_demo(std::deque< trajectory_lat > tra, std::string task_name, std
  *  are stored in memory at the first call.
  */
 std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
-		std::string task_name, std::string path, bool useInterim)
+		std::string task_name, std::string path, bool useInterim, bool drawGraph)
 {
 
   approximation apx;
@@ -130,11 +128,11 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 	  }
 	  mean_JS = apx.standard_deviation(set, true); // having all 6 angles
 
-
-#ifdef DRAW_GRAPHS
-	  mean_JS.set_name("JointSpace_Mean");
-	  lit.write_ndmapSet(mean_JS);
-#endif
+	  if(drawGraph)
+	  {
+		  mean_JS.set_name("JointSpace_Mean");
+		  lit.write_ndmapSet(mean_JS);
+	  }
 
 
 	  std::cout << "[Leatra reproduce] Calculating mean-trajectory in task space." << std::endl;
@@ -165,16 +163,21 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 
   ROS_INFO("After constraint fusion");
 
-#ifdef DRAW_GRAPHS
-  mean_TS.set_name("TaskSpaceData");
-  lit.write_ndmapSet(mean_TS);
+  if(drawGraph)
+  {
+	  ROS_INFO("Drawing graph is enabled.");
 
-  ndmapSetGroup model2 = model;
-  model2.add_ndmapSet( mean_TS );
-  model2.set_name("COKE");
-  draw graph;
-  graph.graph_std(model2);
-#endif
+	  mean_TS.set_name("TaskSpaceData");
+	  lit.write_ndmapSet(mean_TS);
+
+	  ndmapSetGroup model2 = model;
+	  model2.add_ndmapSet( mean_TS );
+	  model2.set_name("COKE");
+	  draw graph;
+	  int drawReturn = graph.graph_std(model2, path);
+	  if(drawReturn != 0)
+		  ROS_WARN("Plotting graphs unsuccessful");
+  }
 
 
   std::cout << "[Leatra reproduce] joining trajectories from task space and joint space." << std::endl;

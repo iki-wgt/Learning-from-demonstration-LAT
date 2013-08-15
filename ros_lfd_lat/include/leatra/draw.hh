@@ -27,7 +27,7 @@ private:
       
 public:
   
-  int graph_std(ndmapSetGroup group);
+  int graph_std(ndmapSetGroup group, std::string path);
   int graph_all(ndmapSetGroup group);
 };
 

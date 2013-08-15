@@ -39,7 +39,7 @@ public:
 		  std::string _task_name, std::string path = "");
 
   std::deque< std::deque< double > > reproduce(std::deque< object > obj,
-		  std::string _task_name, std::string path = "", bool useInterim = false);
+		  std::string _task_name, std::string path = "", bool useInterim = false, bool drawGraph = false);
 
   bool leatra_knows_task(std::string _task_name, std::string path = "");
 

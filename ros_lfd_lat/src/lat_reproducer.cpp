@@ -69,12 +69,11 @@ void objectCallback(const actionlib::SimpleClientGoalState& state,
 		geometry_msgs::PointStamped pointStampedIn, pointStampedOut;
 		pointStampedIn.point = result->recognized_objects.objects[i].pose.pose.pose.position;
 		pointStampedIn.header.frame_id = result->recognized_objects.objects[i].pose.header.frame_id;
-		ROS_INFO("frame id %s", pointStampedIn.header.frame_id.c_str());
-		ROS_INFO("in coordinates: [%f, %f, %f]", pointStampedIn.point.x, pointStampedIn.point.y, pointStampedIn.point.z);
+
 		ros::Duration waitTimeout(3.0);
 		tfListener.waitForTransform(OBJECT_TARGET_FRAME, pointStampedIn.header.frame_id, pointStampedIn.header.stamp, waitTimeout);
 		tfListener.transformPoint(OBJECT_TARGET_FRAME, pointStampedIn, pointStampedOut);
-		ROS_INFO("pointStampedOut frame id %s", pointStampedOut.header.frame_id.c_str());
+
 		obj.set_name(result->recognized_objects.objects[i].type.key);
 		obj.add_coordinate(pointStampedOut.point.x);
 			//result->recognized_objects.objects[i].pose.pose.pose.position.x);
@@ -345,9 +344,22 @@ int main(int argc, char **argv)
 		trajectoryName = readTrajectoryFromUser(trajectoryDir);
 	}
 
+	if(trajectoryDir == USE_USER_HOME_STRING)
+	{
+		trajectoryDir = getHomeDir().string();
+	}
+	else
+	{
+		if(!boost::filesystem::is_directory(boost::filesystem::path(trajectoryDir)))
+		{
+			ROS_ERROR("trajectory_dir is not a valid directory. Will use user home dir instead!");
+			trajectoryDir = getHomeDir().string();
+		}
+	}
+
 	// draw the reproduction diagramm or not
 	bool drawGraph = true;
-	if(strcmp(argv[DRAW_GRAPH_ARG_IDX], "false"))
+	if(strcmp(argv[DRAW_GRAPH_ARG_IDX], "false") == 0)
 	{
 		drawGraph = false;
 	}
@@ -361,10 +373,10 @@ int main(int argc, char **argv)
 	// finished parsing arguments
 	////////////////////////////////////////////////////////////////////////
 
-	ROS_INFO("Selected trajectory: %s (home dir: %s)", trajectoryName.c_str(), getHomeDir().c_str());
+	ROS_INFO("Selected trajectory: %s (home dir: %s)", trajectoryName.c_str(), trajectoryDir.c_str());
 
 	// check if this trajectory exists
-	if (lfd.leatra_knows_task("/" + trajectoryName, getHomeDir().c_str()))
+	if (lfd.leatra_knows_task("/" + trajectoryName, trajectoryDir.c_str()))
 	{
 		ROS_INFO("Trajectory name known.");
 
@@ -398,7 +410,7 @@ int main(int argc, char **argv)
 		// check if all mandatory objects are there
 		bool allItemsThere = false;
 		allItemsThere =
-			lfd.mandatory_objects(&objects, "/" + trajectoryName, getHomeDir().c_str());
+			lfd.mandatory_objects(&objects, "/" + trajectoryName, trajectoryDir.c_str());
 
 		if (allItemsThere)
 		{
@@ -407,7 +419,8 @@ int main(int argc, char **argv)
 			//////////////////////////////////////////////////////////////////////
 			// compute the trajecotry
 			std::deque< std::deque< double > > reproducedTrajectory;
-			reproducedTrajectory = lfd.reproduce(objects, "/" + trajectoryName, getHomeDir().c_str());
+			reproducedTrajectory =
+					lfd.reproduce(objects, "/" + trajectoryName, trajectoryDir.c_str(), false, drawGraph);
 
 			ROS_INFO("Trajectory length: %i", (int)(reproducedTrajectory.size()));
 			if(reproducedTrajectory.size() == 0)

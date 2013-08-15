@@ -1,6 +1,7 @@
 #include <math.h>
 
 #include "draw.hh"
+#include <unistd.h>
 
 
 /**
@@ -14,7 +15,7 @@
  *      The resulting pdf file is being saved in the directory this program is executed from.
  *
  */
-int draw::graph_std(ndmapSetGroup group){		
+int draw::graph_std(ndmapSetGroup group, std::string path){
   
 
   
@@ -28,7 +29,9 @@ int draw::graph_std(ndmapSetGroup group){
   latex += leatra_output_ending;
   latex += ".tex";
   std::string command = "mkdir " + dir;
-  
+  if(0 == chdir(path.c_str()))
+	  ROS_INFO("successfully changed directory");
+  if(0 != system("pwd")) throw data_error(dir, -41);
   if(0 != system(command.c_str())) throw data_error(dir, -41);   
   
   
