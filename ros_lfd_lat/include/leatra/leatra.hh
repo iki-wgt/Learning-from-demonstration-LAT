@@ -94,7 +94,7 @@ public:
   std::deque< double > get_euclide();
   bool create_this_sequence( std::deque< int > seq );
   std::deque< std::deque<double> >* data_pointer();
-  void getMinMax(unsigned int row, double* min, double* max);
+  void get_min_max(unsigned int row, double& min, double& max);
 
   friend class approximation;
   friend class litera;
