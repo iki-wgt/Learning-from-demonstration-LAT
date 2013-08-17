@@ -11,7 +11,15 @@ std::vector<std::string> jointNames;
 std::vector<std::string> gripperJointNames;
 std::vector<double> jointPositions;
 std::vector<double> gripperJointPositions;
+bool allObjectsFound = false;
+lfd lfd;
+double objectShiftThreshold;
 
+// reproduce this trajectory
+std::string trajectoryName;
+
+// specifies the folder where the trajectories are stored (default user_home)
+std::string trajectoryDir;
 
 std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir)
 {
@@ -306,13 +314,97 @@ void printHelpMessage()
 	ROS_INFO("or roslaunch ros_lfd_lat lat_reproducer [trajectory_name:=<trajectory name>]");
 }
 
+bool isObjectStored(const std::string objName)
+{
+	for (unsigned int objIdx = 0; objIdx < objects.size(); ++objIdx)
+	{
+		if(objects[objIdx].get_name() == objName)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 {
+	tf::TransformListener tfListener;
+
 	for (unsigned int markerIdx = 0; markerIdx < markers->markers.size(); ++markerIdx) {
 		ar_track_alvar::AlvarMarker marker = markers->markers[markerIdx];
 		if(marker.id == IKEA_CUP_SOLBRAEND_BLUE_ID || marker.id == COCA_COLA_CAN_250ML_ID)
 		{
-			ROS_INFO("Got marker of %s", OBJECT_NAMES[marker.id].c_str());
+			// transform marker coordinates in correct frame
+			geometry_msgs::PointStamped pointStampedIn, pointStampedOut;
+			pointStampedIn.point = marker.pose.pose.position;
+			pointStampedIn.header.frame_id = marker.header.frame_id;
+
+			ros::Duration waitTimeout(3.0);
+			tfListener.waitForTransform(OBJECT_TARGET_FRAME, pointStampedIn.header.frame_id, pointStampedIn.header.stamp, waitTimeout);
+			tfListener.transformPoint(OBJECT_TARGET_FRAME, pointStampedIn, pointStampedOut);
+
+			if(!allObjectsFound)
+			{
+				ROS_DEBUG("not all objects found yet");
+				// check if this objects was already stored
+				if(!isObjectStored(OBJECT_NAMES[marker.id]))
+				{
+					// store object
+					object obj = object();
+
+
+					obj.set_name(OBJECT_NAMES[marker.id]);
+					obj.add_coordinate(pointStampedOut.point.x);
+					obj.add_coordinate(pointStampedOut.point.y);
+					obj.add_coordinate(pointStampedOut.point.z);
+
+					objects.push_back(obj);
+
+					ROS_INFO("Added object %s on coordinate [%f, %f, %f]", obj.get_name().c_str(),
+							obj.get_coordinate(0),
+							obj.get_coordinate(1),
+							obj.get_coordinate(2));
+
+					// was this the last object to store?
+					if(lfd.mandatory_objects(&objects, "/" + trajectoryName, trajectoryDir.c_str()))
+					{
+						allObjectsFound = true;
+					}
+				}
+			}
+			else	// allObjectsFound == true
+			{
+				// check if an object moved more than the threshold
+				object obj;
+				unsigned int objIdx;
+				for(objIdx = 0; objIdx < objects.size(); ++objIdx)
+				{
+					if(objects[objIdx].get_name() == OBJECT_NAMES[marker.id])
+					{
+						obj = objects[objIdx];
+						break;
+					}
+				}
+
+				double movedDistance = sqrt(
+						pow(pointStampedOut.point.x - obj.get_coordinate(0), 2)
+						+ pow(pointStampedOut.point.y - obj.get_coordinate(1), 2)
+						+ pow(pointStampedOut.point.z - obj.get_coordinate(2), 2)
+						);
+
+				// update object position
+				if(movedDistance >= objectShiftThreshold)
+				{
+					ROS_INFO("Object %s moved %fm", obj.get_name().c_str(), movedDistance);
+
+					std::deque<double> positions;
+					positions.push_back(pointStampedOut.point.x);
+					positions.push_back(pointStampedOut.point.y);
+					positions.push_back(pointStampedOut.point.z);
+					objects[objIdx].set_coordinates(positions);
+				}
+			}
 		}
 	}
 
@@ -333,7 +425,7 @@ int main(int argc, char **argv)
 
 	ROS_INFO("lat_reproducer started");
 
-	lfd lfd;
+
 
 
 
@@ -348,10 +440,10 @@ int main(int argc, char **argv)
 	std::string objectTrackingTopic(argv[OBJECT_TRACKING_TOPIC_ARG_IDX]);
 
 	// specifies the folder where the trajectories are stored (default user_home)
-	std::string trajectoryDir(argv[TRAJECOTRY_DIR_ARG_IDX]);
+	trajectoryDir = argv[TRAJECOTRY_DIR_ARG_IDX];
 
 	// reproduce this trajectory
-	std::string trajectoryName(argv[TRAJECTORY_NAME_ARG_IDX]);
+	trajectoryName = argv[TRAJECTORY_NAME_ARG_IDX];
 	if(trajectoryName == USE_USER_SELECT_STRING)
 	{
 		trajectoryName = readTrajectoryFromUser(trajectoryDir);
@@ -378,7 +470,8 @@ int main(int argc, char **argv)
 	}
 
 	// threshold an object has to move, so that it is recognized
-	double objectShiftThreshold = atof(argv[OBJECT_SHIFT_THRESHOLD_ARG_IDX]);
+	objectShiftThreshold = atof(argv[OBJECT_SHIFT_THRESHOLD_ARG_IDX]);
+	ROS_INFO("Parameter object_shift_threshold = %f", objectShiftThreshold);
 
 	// use this namespace for the trajectory action and so on
 	std::string armController(argv[ARM_CONTROLLER_ARG_IDX]);
@@ -394,13 +487,13 @@ int main(int argc, char **argv)
 		ROS_INFO("Trajectory name known.");
 
 		// Initialize object recognition
-		Or_Client objectClient("object_recognition", true);
+		/*Or_Client objectClient("object_recognition", true);
 		ROS_INFO("Waiting for object recognition server");
 		objectClient.waitForServer();
-		ROS_INFO("Object recognition server ready");
+		ROS_INFO("Object recognition server ready");*/
 
 		ros::Subscriber objectTrackingSubscriber = nodeHandle.subscribe(objectTrackingTopic, 1, objectTrackerCallback);
-
+		/*
 		// get objects
 		objectClient.sendGoal(
 				object_recognition_msgs::ObjectRecognitionGoal(),
@@ -420,7 +513,14 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 
-		ROS_INFO("Finished object recognition");
+		ROS_INFO("Finished object recognition");*/
+
+		ROS_INFO("Waiting till all mandatory objects are found");
+		while(!allObjectsFound)
+		{
+			ros::Duration(0.05).sleep();
+			ros::spinOnce();
+		}
 
 		// check if all mandatory objects are there
 		bool allItemsThere = false;
