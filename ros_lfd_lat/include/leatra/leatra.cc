@@ -1021,12 +1021,12 @@ std::deque< double > ndmap::get_euclide(){
   return euclide;
 }
 
-void ndmap::get_min_max(unsigned int row, double& min, double& max)
+void ndmap::getMinMax(unsigned int row, double& min, double& max)
 {
 	if(row >= map.size())
 	{
-		ROS_ERROR("Row (%d) is out of bounds of ndmap (%zu) in ndmap::get_min_max", row, map.size());
-		throw data_error("row is out of bounds of ndmap in ndmap::get_min_max", -22);
+		ROS_ERROR("Row (%d) is out of bounds of ndmap (%zu) in ndmap::getMinMax", row, map.size());
+		throw data_error("row is out of bounds of ndmap in ndmap::getMinMax", -22);
 	}
 
 	min = 999999999;

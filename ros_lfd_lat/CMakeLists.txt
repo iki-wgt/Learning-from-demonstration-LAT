@@ -32,4 +32,4 @@ rosbuild_add_executable(lat_learner src/lat_learner.cpp include/leatra/leatra.cc
 rosbuild_add_executable(lat_reproducer src/lat_reproducer.cpp include/leatra/leatra.cc include/leatra/stringhelp.cc include/leatra/kinematics.cc include/leatra/lfd.cc include/leatra/litera.cc include/leatra/dtw_leatra.cc include/leatra/dtw2.cc include/leatra/draw.cc)
 
 #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-rosbuild_add_gtest(test/ndmaptest test/ndmaptest.cpp)
+rosbuild_add_gtest(test/ndmaptest test/ndmaptest.cpp include/leatra/leatra.cc include/leatra/stringhelp.cc)
