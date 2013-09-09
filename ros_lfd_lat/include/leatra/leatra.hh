@@ -95,6 +95,7 @@ public:
   bool create_this_sequence( std::deque< int > seq );
   std::deque< std::deque<double> >* data_pointer();
   void getMinMax(unsigned int row, double& min, double& max);
+  unsigned int getDimWithMaxDev();
 
   friend class approximation;
   friend class litera;
@@ -190,6 +191,7 @@ public:
   bool thinning(int new_size);
   void info();
   std::deque< std::deque< double > >* data_pointer(int i);
+  std::deque< bool > getConstraints(double threshold);
 
   friend class approximation;
   friend class litera;

@@ -1032,7 +1032,8 @@ void ndmap::getMinMax(unsigned int row, double& min, double& max)
 	min = 999999999;
 	max = 0;
 
-	for (unsigned int i = 0; i < map[row].size(); ++i) {
+	for (unsigned int i = 0; i < map[row].size(); ++i)
+	{
 		if(map[row][i] < min)
 		{
 			min = map[row][i];
@@ -1042,6 +1043,31 @@ void ndmap::getMinMax(unsigned int row, double& min, double& max)
 			max = map[row][i];
 		}
 	}
+}
+
+unsigned int ndmap::getDimWithMaxDev()
+{
+	std::vector<double> deviations;
+	for (int i = 0; i < get_dim(); ++i)
+	{
+		double min, max;
+		getMinMax(i, min, max);
+		deviations.push_back(max - min);
+	}
+
+	double maxDeviation = 0.0;
+	int dimWithMaxDev = 999;
+
+	for (int i = 0; i < get_dim(); ++i)
+	{
+		if(deviations[i] >= maxDeviation)
+		{
+			maxDeviation = deviations[i];
+			dimWithMaxDev = i;
+		}
+	}
+
+	return dimWithMaxDev;
 }
 
 
@@ -1210,6 +1236,13 @@ void ndmapSet::smoothing(double sigma){
  */
 std::deque< std::deque<double> >* ndmapSet::data_pointer(int i){
   return set[i].data_pointer();
+}
+
+std::deque< bool > ndmapSet::getConstraints(double threshold)
+{
+	std::deque< bool > constraints = std::deque< bool >();
+	ROS_INFO("constraint size: %zu", constraints.size());
+	return constraints;
 }
 
 /*
