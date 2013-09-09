@@ -1238,10 +1238,38 @@ std::deque< std::deque<double> >* ndmapSet::data_pointer(int i){
   return set[i].data_pointer();
 }
 
+/**
+ * Returns a deque that indicated where a constraint is.
+ * A constraint is located where the standard deviation is lower than the threshold.
+ */
 std::deque< bool > ndmapSet::getConstraints(double threshold)
 {
 	std::deque< bool > constraints = std::deque< bool >();
-	ROS_INFO("constraint size: %zu", constraints.size());
+
+	// the forth map contains the standard deviation
+	const unsigned int STD_DEV_DIM = 3;
+
+	if(get_num_of_maps() != 4)
+	{
+		ROS_ERROR("ndmapSet has no std_dev map!");
+		throw data_error("ndmapSet has no std_dev map", -99);
+	}
+
+	unsigned int dimWithMaxDev = set[STD_DEV_DIM].getDimWithMaxDev();
+	std::deque<double> stdDevMap = set[STD_DEV_DIM].get_row(dimWithMaxDev);
+
+	for (unsigned int i = 0; i < stdDevMap.size(); ++i)
+	{
+		if(stdDevMap[i] <= threshold)
+		{
+			constraints.push_back(true);
+		}
+		else
+		{
+			constraints.push_back(false);
+		}
+	}
+
 	return constraints;
 }
 
@@ -1475,6 +1503,7 @@ int data_error::print(){
     case -32: std::cout << "The number of dimensions of " << msg << " are not equal!";                                                        break;
     case -41: std::cout << "The file " << msg << " couldn't be created! Does it exist already?";                                              break;
     case -42: std::cout << "Cannot compute this command: " << msg;                                                                            break;
+    default: std::cout << "Unknown data error: " << msg;
   }
   std::cout<<std::endl;
   return code;
