@@ -158,6 +158,9 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
    */
 
   ROS_INFO("Made model");
+
+  // get constraints from model
+  // in the model are the standard deviations of the objects saved
   model.add_offset(obj);
   ndmapSet mean_TS = apx.constraint_fusion( model, true );
 

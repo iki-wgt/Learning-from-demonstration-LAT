@@ -5,9 +5,11 @@
 
 ndmap createNdmap()
 {
-	double dim1[] = {1.0, 1.0, 1.2, 2.1, 2.1, 3.0, 2.5, 2.5, 3.2, 2.7, 2.7, 1.3, 1.3, 3.0, 3.0};
-	double dim2[] = {0.0, 1.0, 1.2, 5.1, 5.1, 7.0, 5.5, 4.5, 8.2, 2.7, 2.7, 1.3, 1.3, 3.0, 3.0};
-	double dim3[] = {1.0, 1.0, 1.2, 22.1, 22.1, 33.0, 22.5, 2.5, 3.2, 2.7, 2.7, 1.3, 1.3, 3.0, 3.0};
+	// values from the coke
+
+	double dim1[] = {0.03, 0.05, 0.025, 0.01, 0.01, 0.009, 0.025, 0.025, 0.1, 0.11, 0.11, 0.07, 0.05, 0.05};	// values from the cup
+	double dim2[] = {0.22, 0.4, 0.5, 0.6, 0.6, 0.6, 0.5, 0.11, 0.015, 0.015, 0.015, 0.018, 0.38, 0.35};
+	double dim3[] = {0.03, 0.02, 0.07, 0.03, 0.04, 0.04, 0.02, 0.05, 0.01, 0.01, 0.01, 0.06, 0.03, 0.07};
 
 	ndmap ndm;
 
@@ -15,7 +17,7 @@ ndmap createNdmap()
 	ndm.add_deque(std::deque<double>());
 	ndm.add_deque(std::deque<double>());
 
-	for (int i = 0; i < 15; ++i)
+	for (int i = 0; i < 14; ++i)
 	{
 		std::deque<double> point;
 		point.push_back(dim1[i]);
@@ -57,16 +59,16 @@ TEST(TestSuite, testGetMinMax)
 	try
 	{
 		ndm.getMinMax(0, min, max);
-		EXPECT_DOUBLE_EQ(1.0, min) << "Min value of row 0 not  equal 1";
-		EXPECT_DOUBLE_EQ(3.2, max) << "Max value of row 0 not  equal 3.2";
+		EXPECT_DOUBLE_EQ(0.009, min) << "Min value of row 0 not  equal 0.009";
+		EXPECT_DOUBLE_EQ(0.11, max) << "Max value of row 0 not  equal 0.11";
 
 		ndm.getMinMax(1, min, max);
-		EXPECT_DOUBLE_EQ(0.0, min) << "Min value of row 1 not  equal 0";
-		EXPECT_DOUBLE_EQ(8.2, max) << "Max value of row 1 not  equal 8.2";
+		EXPECT_DOUBLE_EQ(0.015, min) << "Min value of row 1 not  equal 0.015";
+		EXPECT_DOUBLE_EQ(0.6, max) << "Max value of row 1 not  equal 0.6";
 
 		ndm.getMinMax(2, min, max);
-		EXPECT_DOUBLE_EQ(1.0, min) << "Min value of row 2 not  equal 1";
-		EXPECT_DOUBLE_EQ(33.0, max) << "Max value of row 2 not  equal 33.0";
+		EXPECT_DOUBLE_EQ(0.01, min) << "Min value of row 2 not  equal 0.01";
+		EXPECT_DOUBLE_EQ(0.07, max) << "Max value of row 2 not  equal 0.07";
 	}
 	catch(data_error& e)
 	{
@@ -80,10 +82,43 @@ TEST(TestSuite, testGetDimWithMaxDev)
 	ndmap ndm = createNdmap();
 
 	unsigned int dimWithMaxDev = ndm.getDimWithMaxDev();
-	EXPECT_EQ(2, dimWithMaxDev) << "Returned dim not the one with max dev";
+	EXPECT_EQ(1, dimWithMaxDev) << "Returned dim not the one with max dev";
 }
 
 TEST(TestSuite, testGetConstraints)
+{
+	ndmapSet ndmSet = createNdmapSet("object1");
+	double threshold1 = 0.015;
+	double threshold2 = 0.11;
+	bool resultArray1[] =
+		{false, false, false, false, false, false, false, false, true, true, true, false, false, false};
+	bool resultArray2[] =
+		{false, false, false, false, false, false, false, true, true, true, true, true, false, false};
+
+	std::deque<bool> expectedResult1 = std::deque<bool>();
+	std::deque<bool> expectedResult2 = std::deque<bool>();
+
+	for (int i = 0; i < 14; ++i)
+	{
+		expectedResult1.push_back(resultArray1[i]);
+		expectedResult2.push_back(resultArray2[i]);
+	}
+
+	std::deque<bool> result1 = ndmSet.getConstraints(threshold1);
+
+	ASSERT_EQ(expectedResult1.size(), result1.size()) << "Size of result 1 incorrect";
+
+	std::deque<bool> result2 = ndmSet.getConstraints(threshold2);
+
+	ASSERT_EQ(expectedResult2.size(), result2.size()) << "Size of result 2 incorrect";
+
+	for (unsigned int i = 0; i < expectedResult1.size(); ++i) {
+		ASSERT_EQ(expectedResult1[i], result1[i]) << "Result 1 incorrect";
+		ASSERT_EQ(expectedResult2[i], result2[i]) << "Result 2 incorrect";
+	}
+}
+
+/*TEST(TestSuite, testGetConstraintsGroup)
 {
 	ndmapSet ndmSet = createNdmapSet("object1");
 	double threshold1 = 1.2;
@@ -114,7 +149,7 @@ TEST(TestSuite, testGetConstraints)
 		ASSERT_EQ(expectedResult1[i], result1[i]) << "Result 1 incorrect";
 		ASSERT_EQ(expectedResult2[i], result2[i]) << "Result 2 incorrect";
 	}
-}
+}*/
 
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv){
