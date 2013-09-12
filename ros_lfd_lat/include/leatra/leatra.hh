@@ -236,6 +236,7 @@ public:
   void print();
   void info();
   void add_offset( std::deque< object > obj);
+  std::deque< bool > getConstraints();
 
   friend class approximation;
   friend class litera;

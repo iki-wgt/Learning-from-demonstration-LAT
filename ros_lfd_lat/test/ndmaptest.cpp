@@ -94,7 +94,7 @@ ndmapSetGroup createNdmapSetGroup()
 	ndmapSetGroup group = ndmapSetGroup();
 
 	group.add_ndmapSet(createNdmapSet1("cup"));
-	group.add_ndmapSet(createNdmapSet1("coke"));
+	group.add_ndmapSet(createNdmapSet2("coke"));
 
 	return group;
 }
@@ -141,8 +141,8 @@ TEST(TestSuite, testGetDimWithMaxDev)
 TEST(TestSuite, testGetConstraints)
 {
 	ndmapSet ndmSet = createNdmapSet1("object1");
-	double threshold1 = 0.015;
-	double threshold2 = 0.11;
+	double threshold1 = 0.0251;
+	double threshold2 = 0.184;
 	bool resultArray1[] =
 		{false, false, false, false, false, false, false, false, true, true, true, false, false, false};
 	bool resultArray2[] =
@@ -180,13 +180,12 @@ TEST(TestSuite, testGetConstraintsGroup)
 
 	std::deque<bool> expectedResult = std::deque<bool>();
 
-	for (int i = 0; i < 15; ++i)
+	for (int i = 0; i < 14; ++i)
 	{
 		expectedResult.push_back(resultArray[i]);
 	}
 
 	std::deque<bool> result = group.getConstraints();
-
 	ASSERT_EQ(expectedResult.size(), result.size()) << "Size of the result incorrect";
 
 	for (unsigned int i = 0; i < expectedResult.size(); ++i) {

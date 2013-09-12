@@ -282,7 +282,6 @@ ndmapSetGroup approximation::make_model(std::deque< trajectory_lat > trajectorie
 }
 
 
-
 /***************************************************************************/
 
 /*                             object                                      */
@@ -1241,9 +1240,14 @@ std::deque< std::deque<double> >* ndmapSet::data_pointer(int i){
 /**
  * Returns a deque that indicated where a constraint is.
  * A constraint is located where the standard deviation is lower than the threshold.
+ *
+ * @param threshold The absolute threshold is computed: thresholdAbsolute = threshold * max
  */
 std::deque< bool > ndmapSet::getConstraints(double threshold)
 {
+	ROS_ASSERT(threshold > 0);
+	ROS_ASSERT(threshold <= 1);
+
 	std::deque< bool > constraints = std::deque< bool >();
 
 	// the forth map contains the standard deviation
@@ -1258,9 +1262,19 @@ std::deque< bool > ndmapSet::getConstraints(double threshold)
 	unsigned int dimWithMaxDev = set[STD_DEV_DIM].getDimWithMaxDev();
 	std::deque<double> stdDevMap = set[STD_DEV_DIM].get_row(dimWithMaxDev);
 
+	double min, max;
+	set[STD_DEV_DIM].getMinMax(dimWithMaxDev, min, max);
+
+	double absoluteThreshold = threshold * max;
+
+	if(absoluteThreshold < min)
+	{
+		absoluteThreshold = min;
+	}
+
 	for (unsigned int i = 0; i < stdDevMap.size(); ++i)
 	{
-		if(stdDevMap[i] <= threshold)
+		if(stdDevMap[i] <= absoluteThreshold)
 		{
 			constraints.push_back(true);
 		}
@@ -1452,6 +1466,43 @@ void ndmapSetGroup::add_offset( std::deque< object > obj){
       }
     }
   }
+}
+
+/**
+ * Returns the constraints that are defined by the objects in this ndmapSetGroup.
+ */
+std::deque< bool > ndmapSetGroup::getConstraints()
+{
+	// threshold 10% of max deviation
+	const double THRESHOLD = 0.10;
+	std::deque< bool > constraints = group[0].getConstraints(THRESHOLD);
+
+	for (unsigned int groupIdx = 1; groupIdx < group.size(); ++groupIdx)
+	{
+		std::deque< bool > constraintsTmp = group[groupIdx].getConstraints(THRESHOLD);
+		ROS_ASSERT(constraints.size() == constraintsTmp.size());
+
+		// and disjugate both deques
+		for (unsigned int i = 0; i < constraints.size(); ++i)
+		{
+			constraints[i] = constraints[i] || constraintsTmp[i];
+		}
+	}
+
+	// check if contraints have been found
+	bool constraintsFound = false;
+	for (unsigned int i = 0; i < constraints.size(); ++i)
+	{
+		constraintsFound = constraints[i] || constraintsFound;
+	}
+
+	if(!constraintsFound)
+	{
+		ROS_ERROR("No constraints found! (threshold: %f, size: %zu, objects: %zu)",
+				THRESHOLD, constraints.size(), group.size());
+	}
+
+	return constraints;
 }
 
 
