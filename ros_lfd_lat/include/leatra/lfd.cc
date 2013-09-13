@@ -51,12 +51,13 @@ bool lfd::save_demo(std::deque< trajectory_lat > tra, std::string task_name, std
  *  @param obj detected objects
  *  @param task_name the name of the task (the saved trajectories are found in the
  *  folder carrying this name)
+ *  @param constraints OUT in this variable the constraints will be saved
  *  @param path directory, where all the tasks are saved.
  *  @param useInterim If this parameter is true the prepared demonstrations
  *  are stored in memory at the first call.
  */
 std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
-		std::string task_name, std::string path, bool useInterim, bool drawGraph)
+		std::string task_name, std::deque<int>& constraints, std::string path, bool useInterim, bool drawGraph	)
 {
 
   approximation apx;
@@ -161,6 +162,26 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 
   // get constraints from model
   // in the model are the standard deviations of the objects saved
+  // threshold 10% of max deviation
+  const double THRESHOLD = 0.10;
+  constraints = model.getConstraints(THRESHOLD);
+
+  // output constraints
+  unsigned int start = 0;
+
+  for (unsigned int i = 0; i < constraints.size() - 1; ++i)
+  {
+	if(constraints[i] == -1 && constraints[i + 1] != -1)
+	{
+		start = i;
+	}
+
+	if(constraints[i] != -1 && constraints[i + 1] == -1)
+	{
+		ROS_INFO("Constraint from %u to %u, object: %s", start, i, obj[constraints[i]].get_name().c_str());
+	}
+  }
+
   model.add_offset(obj);
   ndmapSet mean_TS = apx.constraint_fusion( model, true );
 

@@ -1470,39 +1470,66 @@ void ndmapSetGroup::add_offset( std::deque< object > obj){
 
 /**
  * Returns the constraints that are defined by the objects in this ndmapSetGroup.
+ *
+ * @param threshold The absolute threshold is computed: thresholdAbsolute = threshold * max
+ * @return Returns a deque of ints. A -1 indicates, that there's no constraint at that position.
+ * A number greater -1 represents the index of the object that defines a constraint at that position.
  */
-std::deque< bool > ndmapSetGroup::getConstraints()
+std::deque<int> ndmapSetGroup::getConstraints(double threshold)
 {
-	// threshold 10% of max deviation
-	const double THRESHOLD = 0.10;
-	std::deque< bool > constraints = group[0].getConstraints(THRESHOLD);
+	std::deque<bool> constraintsBool = group[0].getConstraints(threshold);
+	std::deque<int> constraints = constraintDequeBoolToInt(constraintsBool, 0);
+
+	// check if constraints have been found
+	bool constraintsFound = false;
 
 	for (unsigned int groupIdx = 1; groupIdx < group.size(); ++groupIdx)
 	{
-		std::deque< bool > constraintsTmp = group[groupIdx].getConstraints(THRESHOLD);
+		std::deque<int> constraintsTmp = constraintDequeBoolToInt(group[groupIdx].getConstraints(threshold), groupIdx);
 		ROS_ASSERT(constraints.size() == constraintsTmp.size());
 
 		// and disjugate both deques
 		for (unsigned int i = 0; i < constraints.size(); ++i)
 		{
-			constraints[i] = constraints[i] || constraintsTmp[i];
+			if(constraintsTmp[i] > -1)
+			{
+				constraints[i] = constraintsTmp[i];
+				constraintsFound = true;
+			}
 		}
-	}
-
-	// check if contraints have been found
-	bool constraintsFound = false;
-	for (unsigned int i = 0; i < constraints.size(); ++i)
-	{
-		constraintsFound = constraints[i] || constraintsFound;
 	}
 
 	if(!constraintsFound)
 	{
 		ROS_ERROR("No constraints found! (threshold: %f, size: %zu, objects: %zu)",
-				THRESHOLD, constraints.size(), group.size());
+				threshold, constraints.size(), group.size());
 	}
 
 	return constraints;
+}
+
+std::deque<int> ndmapSetGroup::constraintDequeBoolToInt(std::deque<bool> boolDeque, int index)
+{
+	ROS_ASSERT(index >= 0);
+
+	const int NO_CONSTRAINT = -1;
+	std::deque<int> intDeque = std::deque<int>();
+
+	for (unsigned int i = 0; i < boolDeque.size(); ++i)
+	{
+		if(boolDeque[i])
+		{
+			intDeque.push_back(index);
+		}
+		else
+		{
+			intDeque.push_back(NO_CONSTRAINT);
+		}
+	}
+
+	ROS_ASSERT(intDeque.size() == boolDeque.size());
+
+	return intDeque;
 }
 
 

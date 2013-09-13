@@ -533,9 +533,10 @@ int main(int argc, char **argv)
 
 			//////////////////////////////////////////////////////////////////////
 			// compute the trajecotry
-			std::deque< std::deque< double > > reproducedTrajectory;
+			std::deque<std::deque<double> > reproducedTrajectory;
+			std::deque<int> constraints;
 			reproducedTrajectory =
-					lfd.reproduce(objects, "/" + trajectoryName, trajectoryDir.c_str(), false, drawGraph);
+					lfd.reproduce(objects, "/" + trajectoryName, constraints, trajectoryDir.c_str(), false, drawGraph);
 
 			ROS_INFO("Trajectory length: %i", (int)(reproducedTrajectory.size()));
 			if(reproducedTrajectory.size() == 0)

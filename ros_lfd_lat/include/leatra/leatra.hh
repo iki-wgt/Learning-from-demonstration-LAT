@@ -221,6 +221,7 @@ private:
   std::string name;
   std::deque<double> get_min_value();
   std::deque<double> get_max_value();
+  std::deque<int> constraintDequeBoolToInt(std::deque<bool> boolDeque, int index);
 
 public:
   ndmapSetGroup();
@@ -236,7 +237,7 @@ public:
   void print();
   void info();
   void add_offset( std::deque< object > obj);
-  std::deque< bool > getConstraints();
+  std::deque< int > getConstraints(double threshold);
 
   friend class approximation;
   friend class litera;

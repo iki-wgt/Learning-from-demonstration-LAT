@@ -173,19 +173,22 @@ TEST(TestSuite, testGetConstraints)
 
 TEST(TestSuite, testGetConstraintsGroup)
 {
+	// threshold 10% of max deviation
+	const double THRESHOLD = 0.10;
+
 	ndmapSetGroup group = createNdmapSetGroup();
 
-	bool resultArray[] =
-		{false, false, false, true, true, true, false, false, true, true, true, true, false, false};
+	int resultArray[] =
+		{-1, -1, -1, 1, 1, 1, -1, -1, 0, 0, 0, 0, -1, -1};
 
-	std::deque<bool> expectedResult = std::deque<bool>();
+	std::deque<int> expectedResult = std::deque<int>();
 
 	for (int i = 0; i < 14; ++i)
 	{
 		expectedResult.push_back(resultArray[i]);
 	}
 
-	std::deque<bool> result = group.getConstraints();
+	std::deque<int> result = group.getConstraints(THRESHOLD);
 	ASSERT_EQ(expectedResult.size(), result.size()) << "Size of the result incorrect";
 
 	for (unsigned int i = 0; i < expectedResult.size(); ++i) {
