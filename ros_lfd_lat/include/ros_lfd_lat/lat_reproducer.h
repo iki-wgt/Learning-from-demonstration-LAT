@@ -121,6 +121,16 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& marker);
  */
 unsigned int getCurrentStepNo();
 
+/**
+ * Determines whether the given object is under a constraint at that moment or not.
+ *
+ * @param objectId Use this object.
+ * @param step at that start
+ * @param constraints in these constraints
+ * @return Is this object under a constraint at that time.
+ */
+bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int>& constraints);
+
 
 int main(int argc, char **argv);
 

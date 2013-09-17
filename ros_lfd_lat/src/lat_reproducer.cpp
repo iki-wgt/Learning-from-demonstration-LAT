@@ -431,6 +431,13 @@ unsigned int getCurrentStepNo()
 	return currentStepNo;
 }
 
+bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int>& constraints)
+{
+	bool underConstraint = false;
+
+	return underConstraint;
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "lat_reproducer");
@@ -445,10 +452,6 @@ int main(int argc, char **argv)
 	}
 
 	ROS_INFO("lat_reproducer started");
-
-
-
-
 
 	// flag that determines whether the program runs on gazebo or not
 	bool inSimulation = false;
@@ -713,5 +716,6 @@ int main(int argc, char **argv)
 	{
 		ROS_WARN("Trajectory name unknown!");
 	}
-}
 
+	return EXIT_SUCCESS;
+}
