@@ -116,6 +116,11 @@ void printHelpMessage();
  */
 void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& marker);
 
+/**
+ * Returns the number of the step that is being executed at the moment.
+ */
+unsigned int getCurrentStepNo();
+
 
 int main(int argc, char **argv);
 

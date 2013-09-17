@@ -14,12 +14,15 @@ std::vector<double> gripperJointPositions;
 bool allObjectsFound = false;
 lfd lfd;
 double objectShiftThreshold;
+ros::Time trajectoryStartTime;
 
 // reproduce this trajectory
 std::string trajectoryName;
 
 // specifies the folder where the trajectories are stored (default user_home)
 std::string trajectoryDir;
+
+std::deque<int> constraints;
 
 std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir)
 {
@@ -396,7 +399,7 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 				// update object position
 				if(movedDistance >= objectShiftThreshold)
 				{
-					ROS_INFO("Object %s moved %fm", obj.get_name().c_str(), movedDistance);
+					ROS_INFO("Object %s moved %fm, step: %d", obj.get_name().c_str(), movedDistance, getCurrentStepNo());
 
 					std::deque<double> positions;
 					positions.push_back(pointStampedOut.point.x);
@@ -407,7 +410,25 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 			}
 		}
 	}
+}
 
+unsigned int getCurrentStepNo()
+{
+	unsigned int currentStepNo = 0;
+
+	ros::Duration timeDiff = ros::Time::now() - (trajectoryStartTime + ros::Duration(TIME_FROM_START));
+	double timeDiffSecs = timeDiff.toSec();
+
+	if(timeDiffSecs >= 0)
+	{
+		currentStepNo = timeDiffSecs * REPRODUCE_HZ;
+	}
+	else
+	{
+		ROS_ERROR("getCurrentStepNo was called before the trajectory started!");
+	}
+
+	return currentStepNo;
 }
 
 int main(int argc, char **argv)
@@ -534,7 +555,6 @@ int main(int argc, char **argv)
 			//////////////////////////////////////////////////////////////////////
 			// compute the trajecotry
 			std::deque<std::deque<double> > reproducedTrajectory;
-			std::deque<int> constraints;
 			reproducedTrajectory =
 					lfd.reproduce(objects, "/" + trajectoryName, constraints, trajectoryDir.c_str(), false, drawGraph);
 
@@ -637,8 +657,10 @@ int main(int argc, char **argv)
 			// before starting move the robot to the first position of the trajectory
 			moveRobotToStartPos(reproducedTrajectory, inSimulation);
 
+			///////////////////////////////////////////////////
 			// Finally start the trajectory!!!!!
 			ROS_INFO("Starting now with the trajectory.");
+			trajectoryStartTime = goal.trajectory.header.stamp;
 			trajClient.sendGoal(goal);
 
 			if(inSimulation)
