@@ -55,30 +55,6 @@ typedef actionlib::SimpleActionClient<katana_msgs::JointMovementAction> MoveClie
 std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir = USE_USER_HOME_STRING);
 
 /**
- * \brief Callback function for the object recognition.
- *
- * Pure callback function for an actionlib goal. Do not call it by yourself.
- *
- * @param state actionlib goal state
- * @param result Message containing the recognized objects and their positions.
- */
-void objectCallback(const actionlib::SimpleClientGoalState& state,
-		const object_recognition_msgs::ObjectRecognitionResultConstPtr& result);
-
-/**
- * Callback function for the actionlib event "goal went active".
- */
-void activeCb();
-
-/**
- * Callback for the actionlib feedback. Not in use.
- *
- * @param feedback Feedback of the action.
- */
-void feedbackCb(
-		const object_recognition_msgs::ObjectRecognitionFeedbackConstPtr& feedback);
-
-/**
  * Returns a vector with all the joint names of the robot.
  * Subscribes shortly for the /joint_state topic.
  *

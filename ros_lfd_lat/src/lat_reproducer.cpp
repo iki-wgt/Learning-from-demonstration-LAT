@@ -71,51 +71,6 @@ std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir)
 	return trajectories;
 }
 
-void objectCallback(const actionlib::SimpleClientGoalState& state,
-		const object_recognition_msgs::ObjectRecognitionResultConstPtr& result)
-{
-	tf::TransformListener tfListener;
-	//tfListener.transformPoint()
-
-	int objCount = result->recognized_objects.objects.size();
-	for (int i = 0; i < objCount; ++i) {
-		object obj = object();
-		geometry_msgs::PointStamped pointStampedIn, pointStampedOut;
-		pointStampedIn.point = result->recognized_objects.objects[i].pose.pose.pose.position;
-		pointStampedIn.header.frame_id = result->recognized_objects.objects[i].pose.header.frame_id;
-
-		ros::Duration waitTimeout(3.0);
-		tfListener.waitForTransform(OBJECT_TARGET_FRAME, pointStampedIn.header.frame_id, pointStampedIn.header.stamp, waitTimeout);
-		tfListener.transformPoint(OBJECT_TARGET_FRAME, pointStampedIn, pointStampedOut);
-
-		obj.set_name(result->recognized_objects.objects[i].type.key);
-		obj.add_coordinate(pointStampedOut.point.x);
-			//result->recognized_objects.objects[i].pose.pose.pose.position.x);
-		obj.add_coordinate(pointStampedOut.point.y);
-			//result->recognized_objects.objects[i].pose.pose.pose.position.y);
-		obj.add_coordinate(pointStampedOut.point.z);
-			//result->recognized_objects.objects[i].pose.pose.pose.position.z);
-
-		objects.push_back(obj);
-
-		ROS_INFO("Added object %s on coordinate [%f, %f, %f]", obj.get_name().c_str(),
-				obj.get_coordinate(0),
-				obj.get_coordinate(1),
-				obj.get_coordinate(2));
-	}
-}
-
-void activeCb()
-{
-	ROS_INFO("Object recognition goal just went active");
-}
-
-void feedbackCb(
-		const object_recognition_msgs::ObjectRecognitionFeedbackConstPtr& feedback)
-{
-
-}
-
 std::vector<std::string> getJointNames(bool inSimulation)
 {
 	// initialize joint state listener
@@ -526,8 +481,6 @@ pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std
 	gripperGoal.trajectory.joint_names = gripperJointNames;
 	gripperGoal.trajectory.points.resize(trajectory[0].size());
 
-	unsigned int armJointCount = 5;
-
 	// copy the waypoints
 	for (unsigned int pointNo = 0; pointNo < trajectory[0].size(); ++pointNo)
 	{
@@ -570,8 +523,6 @@ int main(int argc, char **argv)
 
 	// flag that determines whether the program runs on gazebo or not
 	bool inSimulation = false;
-
-	unsigned int armJointCount = ARM_JOINT_COUNT_NOT_YET_DEFINED;
 
 	//////////////////////////////////////////////////////////////////////
 	// parse arguments
@@ -625,34 +576,7 @@ int main(int argc, char **argv)
 	{
 		ROS_INFO("Trajectory name known.");
 
-		// Initialize object recognition
-		/*Or_Client objectClient("object_recognition", true);
-		ROS_INFO("Waiting for object recognition server");
-		objectClient.waitForServer();
-		ROS_INFO("Object recognition server ready");*/
-
 		ros::Subscriber objectTrackingSubscriber = nodeHandle.subscribe(objectTrackingTopic, 1, objectTrackerCallback);
-		/*
-		// get objects
-		objectClient.sendGoal(
-				object_recognition_msgs::ObjectRecognitionGoal(),
-				&objectCallback,
-				&activeCb,
-				&feedbackCb
-		);
-
-		objectClient.waitForResult();
-
-		if(objectClient.getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
-		{
-			ROS_ERROR("Error in object recognition");
-			ROS_ERROR("State text: %s",
-					objectClient.getState().getText().c_str());
-
-			return EXIT_FAILURE;
-		}
-
-		ROS_INFO("Finished object recognition");*/
 
 		ROS_INFO("Waiting till all mandatory objects are found");
 		while(!allObjectsFound)
