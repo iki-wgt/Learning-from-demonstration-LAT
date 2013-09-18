@@ -421,7 +421,7 @@ unsigned int getCurrentStepNo()
 
 	if(timeDiffSecs >= 0)
 	{
-		currentStepNo = timeDiffSecs * REPRODUCE_HZ;
+		currentStepNo = timeDiffSecs/* * REPRODUCE_HZ*/;
 	}
 	else
 	{
@@ -433,9 +433,35 @@ unsigned int getCurrentStepNo()
 
 bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int>& constraints)
 {
+	ROS_ASSERT(constraints.size() > 1);
+	ROS_ASSERT_MSG(objectId >= 0, "only objectIds >= 0 are valid");
+
 	bool underConstraint = false;
 
+	if(constraints[step] == objectId)
+	{
+		underConstraint = true;
+	}
+
 	return underConstraint;
+}
+
+bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int>& constraints)
+{
+	ROS_ASSERT(constraints.size() > 1);
+	ROS_ASSERT_MSG(objectId >= 0, "only objectIds >= 0 are valid");
+
+	bool afterConstraint = false;
+
+	for (unsigned int currentStep = 1; currentStep <= step; ++currentStep) {
+		if(constraints[currentStep - 1] == objectId && constraints[currentStep] != objectId)
+		{
+			afterConstraint = true;
+			break;
+		}
+	}
+
+	return afterConstraint;
 }
 
 int main(int argc, char **argv)

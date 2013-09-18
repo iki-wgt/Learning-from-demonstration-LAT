@@ -125,11 +125,21 @@ unsigned int getCurrentStepNo();
  * Determines whether the given object is under a constraint at that moment or not.
  *
  * @param objectId Use this object.
- * @param step at that start
+ * @param step at that time step
  * @param constraints in these constraints
  * @return Is this object under a constraint at that time.
  */
 bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int>& constraints);
+
+/**
+ * Determines whether the given object has been under a constraint before that moment or not.
+ *
+ * @param objectId Use this object.
+ * @param step at that time step
+ * @param constraints in these constraints
+ * @return Has this object been under a constraint before that time.
+ */
+bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int>& constraints);
 
 
 int main(int argc, char **argv);
