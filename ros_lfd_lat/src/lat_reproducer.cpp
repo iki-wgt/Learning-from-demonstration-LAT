@@ -617,8 +617,8 @@ int main(int argc, char **argv)
 			// now move the arm
 			// after the example from
 			// www.ros.org/wiki/pr2_controllers/Tutorials/Moving%20the%20arm%20using%20the%20Joint%20Trajectory%20Action
-			TrajClient gripperClient("katana_arm_controller/gripper_joint_trajectory_action");	//TODO: Katana specific
-			TrajClient trajClient("katana_arm_controller/joint_trajectory_action", true);		//TODO: Katana specific
+			TrajClient gripperClient(armController + "/gripper_joint_trajectory_action");
+			TrajClient trajClient(armController + "/joint_trajectory_action", true);
 
 			trajClient.waitForServer();
 			inSimulation = gripperClient.waitForServer(ros::Duration(0.01));
