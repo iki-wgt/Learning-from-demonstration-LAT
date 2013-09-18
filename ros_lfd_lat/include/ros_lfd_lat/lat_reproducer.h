@@ -141,6 +141,25 @@ bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int
  */
 bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int>& constraints);
 
+/**
+ * Creates a joint trajectory goal from the given trajectory.
+ *
+ * @param trajectory The trajectory with the computed values
+ * @param inSimulation Determines whether the node runs in Gazebo or on the real robot
+ * @return The filled goal
+ */
+pr2_controllers_msgs::JointTrajectoryGoal createGoal(
+		const std::deque<std::deque<double> >& trajectory, bool inSimulation);
+
+/**
+ * Creates a joint trajectory goal for the gripper from the given trajectory.
+ *
+ * This function is only used in simulation.
+ *
+ * @param trajectory The trajectory with the computed values
+ * @return The filled gripper goal
+ */
+pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std::deque<double> >& trajectory);
 
 int main(int argc, char **argv);
 
