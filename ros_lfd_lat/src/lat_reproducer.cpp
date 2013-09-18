@@ -399,13 +399,18 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 				// update object position
 				if(movedDistance >= objectShiftThreshold)
 				{
-					ROS_INFO("Object %s moved %fm, step: %d", obj.get_name().c_str(), movedDistance, getCurrentStepNo());
+					// update only if the objects is before its constraint
+					if(!objectUnderConstraint(objIdx, getCurrentStepNo(), constraints)
+							&& !objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
+					{
+						ROS_INFO("Object %s moved %fm", obj.get_name().c_str(), movedDistance);
 
-					std::deque<double> positions;
-					positions.push_back(pointStampedOut.point.x);
-					positions.push_back(pointStampedOut.point.y);
-					positions.push_back(pointStampedOut.point.z);
-					objects[objIdx].set_coordinates(positions);
+						std::deque<double> positions;
+						positions.push_back(pointStampedOut.point.x);
+						positions.push_back(pointStampedOut.point.y);
+						positions.push_back(pointStampedOut.point.z);
+						objects[objIdx].set_coordinates(positions);
+					}
 				}
 			}
 		}
@@ -421,7 +426,7 @@ unsigned int getCurrentStepNo()
 
 	if(timeDiffSecs >= 0)
 	{
-		currentStepNo = timeDiffSecs/* * REPRODUCE_HZ*/;
+		currentStepNo = timeDiffSecs * RECORDING_HZ;
 	}
 	else
 	{
