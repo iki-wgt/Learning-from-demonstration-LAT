@@ -506,6 +506,31 @@ pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std
 	return gripperGoal;
 }
 
+bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation)
+{	// TODO use something like inverse kinematics to do this
+	bool reachable = true;
+	const double Z_OFFSET = 0.22;		// katana specific
+	const double Z_MINIMUM = -0.3;
+
+	if(objectLocation.header.frame_id != OBJECT_TARGET_FRAME)
+	{
+		ROS_WARN("objects in isObjectReachable should be in OBJECT_TARGET_FRAME!");
+	}
+
+	double distance = sqrt(
+			pow(objectLocation.point.x, 2)
+			+ pow(objectLocation.point.y, 2)
+			+ pow(objectLocation.point.z - Z_OFFSET, 2)
+			);
+
+	if(distance > ARM_RANGE || objectLocation.point.z < Z_MINIMUM)
+	{
+		reachable = false;
+	}
+
+	return reachable;
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "lat_reproducer");

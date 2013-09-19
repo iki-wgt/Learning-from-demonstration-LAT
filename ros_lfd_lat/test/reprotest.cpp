@@ -101,6 +101,91 @@ TEST(TestSuite, testObjectAfterConstraint)
 	EXPECT_EQ(true, objectAfterConstraint(0, 13, constraints));
 }
 
+TEST(TestSuite, testIsObjectReachable)
+{
+	geometry_msgs::PointStamped objectLocation = geometry_msgs::PointStamped();
+
+	objectLocation.header.frame_id = "/katana_base_link";
+
+	objectLocation.point.x = 1;		// to the front
+	objectLocation.point.y = 1;		// to the side
+	objectLocation.point.z = 1;		// up
+
+	EXPECT_NE(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0.4;
+	objectLocation.point.y = 0;
+	objectLocation.point.z = 0.2;
+
+	EXPECT_EQ(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0.4;
+	objectLocation.point.y = 0;
+	objectLocation.point.z = 0.3;
+
+	EXPECT_EQ(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0;
+	objectLocation.point.y = 0;
+	objectLocation.point.z = 0.83;
+
+	EXPECT_NE(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0;
+	objectLocation.point.y = 0;
+	objectLocation.point.z = 0.82;
+
+	EXPECT_EQ(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0.61;
+	objectLocation.point.y = 0;
+	objectLocation.point.z = 0.22;
+
+	EXPECT_NE(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0.6;
+	objectLocation.point.y = 0;
+	objectLocation.point.z = 0.22;
+
+	EXPECT_EQ(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0;
+	objectLocation.point.y = 0.61;
+	objectLocation.point.z = 0.22;
+
+	EXPECT_NE(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0;
+	objectLocation.point.y = 0.6;
+	objectLocation.point.z = 0.22;
+
+	EXPECT_EQ(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0;
+	objectLocation.point.y = -0.61;
+	objectLocation.point.z = 0.22;
+
+	EXPECT_NE(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0;
+	objectLocation.point.y = -0.6;
+	objectLocation.point.z = 0.22;
+
+	EXPECT_EQ(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0.15;
+	objectLocation.point.y = 0.0;
+	objectLocation.point.z = -0.31;
+
+	EXPECT_NE(true, isObjectReachable(objectLocation));
+
+	objectLocation.point.x = 0.15;
+	objectLocation.point.y = 0.0;
+	objectLocation.point.z = -0.3;
+
+	EXPECT_EQ(true, isObjectReachable(objectLocation));
+}
+
 TEST(TestSuite, testBlaBla)
 {
 

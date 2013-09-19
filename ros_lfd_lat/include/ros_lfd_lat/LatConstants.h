@@ -18,6 +18,7 @@ const std::string OBJECT_TARGET_FRAME = "/katana_base_link";
 const std::string USE_USER_HOME_STRING = "user_home";
 const std::string USE_USER_SELECT_STRING = "user_select";
 const unsigned int ARM_JOINT_COUNT_NOT_YET_DEFINED = 999;
+const double ARM_RANGE = 0.6;		// TODO: Katana specific
 
 // consts for program argument processing
 const unsigned int NO_OF_ARGS						= 6;
