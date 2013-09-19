@@ -302,80 +302,88 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 			pointStampedIn.header.frame_id = marker.header.frame_id;
 
 			ros::Duration waitTimeout(3.0);
-			tfListener.waitForTransform(OBJECT_TARGET_FRAME, pointStampedIn.header.frame_id, pointStampedIn.header.stamp, waitTimeout);
+			tfListener.waitForTransform(OBJECT_TARGET_FRAME, pointStampedIn.header.frame_id,
+					pointStampedIn.header.stamp, waitTimeout);
 			tfListener.transformPoint(OBJECT_TARGET_FRAME, pointStampedIn, pointStampedOut);
 
-			if(!allObjectsFound)
+			if(isObjectReachable(pointStampedOut))
 			{
-				ROS_DEBUG("not all objects found yet");
-				// check if this objects was already stored
-				if(!isObjectStored(OBJECT_NAMES[marker.id]))
+				if(!allObjectsFound)
 				{
-					// store object
-					object obj = object();
-
-
-					obj.set_name(OBJECT_NAMES[marker.id]);
-					obj.add_coordinate(pointStampedOut.point.x);
-					obj.add_coordinate(pointStampedOut.point.y);
-					obj.add_coordinate(pointStampedOut.point.z);
-
-					objects.push_back(obj);
-
-					ROS_INFO("Added object %s on coordinate [%f, %f, %f]", obj.get_name().c_str(),
-							obj.get_coordinate(0),
-							obj.get_coordinate(1),
-							obj.get_coordinate(2));
-
-					// was this the last object to store?
-					if(lfd.mandatory_objects(&objects, "/" + trajectoryName, trajectoryDir.c_str()))
+					ROS_DEBUG("not all objects found yet");
+					// check if this objects was already stored
+					if(!isObjectStored(OBJECT_NAMES[marker.id]))
 					{
-						allObjectsFound = true;
+						// store object
+						object obj = object();
+
+
+						obj.set_name(OBJECT_NAMES[marker.id]);
+						obj.add_coordinate(pointStampedOut.point.x);
+						obj.add_coordinate(pointStampedOut.point.y);
+						obj.add_coordinate(pointStampedOut.point.z);
+
+						objects.push_back(obj);
+
+						ROS_INFO("Added object %s on coordinate [%f, %f, %f]", obj.get_name().c_str(),
+								obj.get_coordinate(0),
+								obj.get_coordinate(1),
+								obj.get_coordinate(2));
+
+						// was this the last object to store?
+						if(lfd.mandatory_objects(&objects, "/" + trajectoryName, trajectoryDir.c_str()))
+						{
+							allObjectsFound = true;
+						}
+					}
+				}
+				else	// allObjectsFound == true
+				{
+					// check if an object moved more than the threshold
+					object obj;
+					unsigned int objIdx;
+					for(objIdx = 0; objIdx < objects.size(); ++objIdx)
+					{
+						if(objects[objIdx].get_name() == OBJECT_NAMES[marker.id])
+						{
+							obj = objects[objIdx];
+							break;
+						}
+					}
+
+					double movedDistance = sqrt(
+							pow(pointStampedOut.point.x - obj.get_coordinate(0), 2)
+							+ pow(pointStampedOut.point.y - obj.get_coordinate(1), 2)
+							+ pow(pointStampedOut.point.z - obj.get_coordinate(2), 2)
+							);
+
+					// update object position
+					if(movedDistance >= objectShiftThreshold)
+					{
+						// update only if the objects is before its constraint
+						if(!objectUnderConstraint(objIdx, getCurrentStepNo(), constraints)
+								&& !objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
+						{
+							ROS_INFO("Object %s moved %fm", obj.get_name().c_str(), movedDistance);
+
+							std::deque<double> positions;
+							positions.push_back(pointStampedOut.point.x);
+							positions.push_back(pointStampedOut.point.y);
+							positions.push_back(pointStampedOut.point.z);
+							objects[objIdx].set_coordinates(positions);
+
+							// trigger recalculation
+							recalculateTrajectory = true;
+						}
 					}
 				}
 			}
-			else	// allObjectsFound == true
+			else
 			{
-				// check if an object moved more than the threshold
-				object obj;
-				unsigned int objIdx;
-				for(objIdx = 0; objIdx < objects.size(); ++objIdx)
-				{
-					if(objects[objIdx].get_name() == OBJECT_NAMES[marker.id])
-					{
-						obj = objects[objIdx];
-						break;
-					}
-				}
-
-				double movedDistance = sqrt(
-						pow(pointStampedOut.point.x - obj.get_coordinate(0), 2)
-						+ pow(pointStampedOut.point.y - obj.get_coordinate(1), 2)
-						+ pow(pointStampedOut.point.z - obj.get_coordinate(2), 2)
-						);
-
-				// update object position
-				if(movedDistance >= objectShiftThreshold)
-				{
-					// update only if the objects is before its constraint
-					if(!objectUnderConstraint(objIdx, getCurrentStepNo(), constraints)
-							&& !objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
-					{
-						ROS_INFO("Object %s moved %fm", obj.get_name().c_str(), movedDistance);
-
-						std::deque<double> positions;
-						positions.push_back(pointStampedOut.point.x);
-						positions.push_back(pointStampedOut.point.y);
-						positions.push_back(pointStampedOut.point.z);
-						objects[objIdx].set_coordinates(positions);
-
-						// trigger recalculation
-						recalculateTrajectory = true;
-					}
-				}
-			}
+				//ROS_WARN("object not reachable");
+			} // end of if(isObjectReachable(pointStampedOut))
 		}
-	}
+	}	// end of for loop
 }
 
 unsigned int getCurrentStepNo()
@@ -430,7 +438,8 @@ bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int
 	return afterConstraint;
 }
 
-pr2_controllers_msgs::JointTrajectoryGoal createGoal(const std::deque<std::deque<double> >& trajectory, bool inSimulation)
+pr2_controllers_msgs::JointTrajectoryGoal createGoal(
+		const std::deque<std::deque<double> >& trajectory, bool inSimulation)
 {
 	unsigned int armJointCount = ARM_JOINT_COUNT_NOT_YET_DEFINED;
 	pr2_controllers_msgs::JointTrajectoryGoal goal;
