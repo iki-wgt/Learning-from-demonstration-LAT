@@ -11,6 +11,8 @@
 #include "leatra.hh"
 #include "litera.hh"
 
+#include <boost/filesystem.hpp>
+
 /**
  * @author  Heiko Posenauer
  * @date 02.02.2012

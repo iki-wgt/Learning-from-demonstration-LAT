@@ -55,6 +55,7 @@ bool lfd::save_demo(std::deque< trajectory_lat > tra, std::string task_name, std
  *  @param path directory, where all the tasks are saved.
  *  @param useInterim If this parameter is true the prepared demonstrations
  *  are stored in memory at the first call.
+ *  @param drawGraph If set to true a graph of the trajectory will be plotted
  */
 std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 		std::string task_name, std::deque<int>& constraints, std::string path, bool useInterim, bool drawGraph	)
@@ -191,6 +192,11 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
   {
 	  ROS_INFO("Drawing graph is enabled.");
 
+	  if(useInterim)
+	  {
+		  path += "/" + boost::lexical_cast<std::string>(ros::Time::now().toNSec()) + "/";
+	  }
+
 	  mean_TS.set_name("TaskSpaceData");
 	  lit.write_ndmapSet(mean_TS);
 
@@ -198,6 +204,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 	  model2.add_ndmapSet( mean_TS );
 	  model2.set_name("COKE");
 	  draw graph;
+	  ROS_INFO("path: %s", path.c_str());
 	  int drawReturn = graph.graph_std(model2, path);
 	  if(drawReturn != 0)
 		  ROS_WARN("Plotting graphs unsuccessful");

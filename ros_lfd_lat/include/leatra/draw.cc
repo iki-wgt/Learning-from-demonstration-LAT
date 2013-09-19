@@ -29,8 +29,23 @@ int draw::graph_std(ndmapSetGroup group, std::string path){
   latex += leatra_output_ending;
   latex += ".tex";
   std::string command = "mkdir " + dir;
+
+  // check if directory exists
+  if(!boost::filesystem::is_directory(boost::filesystem::path(path)))
+  {
+	  std::string mkdirCommand = "mkdir " + path;
+	  if(0 != system(mkdirCommand.c_str())) throw data_error(dir, -41);
+  }
+
   if(0 == chdir(path.c_str()))
-	  ROS_INFO("successfully changed directory");
+  {
+	  //ROS_INFO("successfully changed directory");
+  }
+  else
+  {
+	  ROS_WARN("Could not cd into directory: %s", path.c_str());
+  }
+
   if(0 != system("pwd")) throw data_error(dir, -41);
   if(0 != system(command.c_str())) throw data_error(dir, -41);   
   

@@ -617,6 +617,7 @@ int main(int argc, char **argv)
 			// now move the arm
 			// after the example from
 			// www.ros.org/wiki/pr2_controllers/Tutorials/Moving%20the%20arm%20using%20the%20Joint%20Trajectory%20Action
+			// armController was read from the launch file
 			TrajClient gripperClient(armController + "/gripper_joint_trajectory_action");
 			TrajClient trajClient(armController + "/joint_trajectory_action", true);
 
@@ -652,6 +653,11 @@ int main(int argc, char **argv)
 				{
 					ROS_INFO("Recalculation of trajecotry triggered.");
 					recalculateTrajectory = false;
+
+					reproducedTrajectory =
+							lfd.reproduce(
+									objects, "/" + trajectoryName,
+									constraints, trajectoryDir.c_str(), true, drawGraph);	// use interim set to true
 				}
 
 				ros::Duration(0.001).sleep();
