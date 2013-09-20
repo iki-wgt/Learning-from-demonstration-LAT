@@ -631,8 +631,9 @@ int main(int argc, char **argv)
 			//////////////////////////////////////////////////////////////////////
 			// compute the trajecotry
 			std::deque<std::deque<double> > reproducedTrajectory;
+
 			reproducedTrajectory =
-					lfd.reproduce(objects, "/" + trajectoryName, constraints, trajectoryDir.c_str(), false, drawGraph);
+					lfd.reproduce(objects, "/" + trajectoryName, constraints, trajectoryDir.c_str(), true, drawGraph);
 
 			ROS_INFO("Trajectory length: %i", (int)(reproducedTrajectory.size()));
 			if(reproducedTrajectory.size() == 0)
@@ -691,7 +692,9 @@ int main(int argc, char **argv)
 					reproducedTrajectory =
 							lfd.reproduce(
 									objects, "/" + trajectoryName,
-									constraints, trajectoryDir.c_str(), true, drawGraph);	// use interim set to true
+									constraints, trajectoryDir.c_str(), true, drawGraph);	// useInterim set to true
+
+					ROS_INFO("Recalculation finished");
 				}
 
 				ros::Duration(0.001).sleep();

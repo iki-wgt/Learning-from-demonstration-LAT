@@ -66,7 +66,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
   std::deque< trajectory_lat > JS;
   ndmapSet mean_JS;
   ndmapSetGroup model;
-  
+
   if(!useInterim || !isInterimPrepared())
   {
 	  ROS_INFO("[Leatra reproduce] reading trajectories from the file: %s%s",path.c_str(), task_name.c_str());
@@ -234,5 +234,5 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 
 bool lfd::isInterimPrepared()
 {
-	return ((interimMean_JS.get_dim() > 0) && (interimModel.get_dim() > 0));
+	return ((interimMean_JS.get_num_of_maps() > 0) && (interimModel.get_dim() > 0));
 }
