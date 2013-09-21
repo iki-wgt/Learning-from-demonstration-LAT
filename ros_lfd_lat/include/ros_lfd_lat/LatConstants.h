@@ -20,6 +20,9 @@ const std::string USE_USER_SELECT_STRING = "user_select";
 const unsigned int ARM_JOINT_COUNT_NOT_YET_DEFINED = 999;
 const double ARM_RANGE = 0.6;		// TODO: Katana specific
 
+// threshold 8% of max deviation
+const double CONSTRAINT_THRESHOLD = 0.08;
+
 // consts for program argument processing
 const unsigned int NO_OF_ARGS						= 6;
 const unsigned int OBJECT_TRACKING_TOPIC_ARG_IDX	= 1;

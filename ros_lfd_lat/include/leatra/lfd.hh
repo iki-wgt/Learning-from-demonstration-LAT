@@ -11,6 +11,8 @@
 #include "leatra.hh"
 #include "litera.hh"
 
+#include "ros_lfd_lat/LatConstants.h"
+
 class lfd{
 
 private:

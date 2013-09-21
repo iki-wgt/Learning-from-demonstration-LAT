@@ -163,9 +163,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 
   // get constraints from model
   // in the model are the standard deviations of the objects saved
-  // threshold 10% of max deviation
-  const double THRESHOLD = 0.10;
-  constraints = model.getConstraints(THRESHOLD);
+  constraints = model.getConstraints(CONSTRAINT_THRESHOLD);
 
   // output constraints
   unsigned int start = 0;
