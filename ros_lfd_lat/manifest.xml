@@ -11,9 +11,7 @@ As a dependecy Eigen3 has to be located in /usr/local/include.
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ros_lfd_lat</url>
-  <depend package="rospy"/>
   <depend package="roscpp"/>
-  <depend package="std_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="sensor_msgs"/>
   <depend package="object_recognition_msgs"/>

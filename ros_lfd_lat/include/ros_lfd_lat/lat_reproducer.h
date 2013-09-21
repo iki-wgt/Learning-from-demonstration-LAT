@@ -11,13 +11,9 @@
 #define BOOST_FILESYSTEM_VERSION 3
 
 #include "ros/ros.h"
-#include "std_msgs/String.h"
-#include "object_recognition_msgs/RecognizedObject.h"
 #include "sensor_msgs/JointState.h"
 #include "actionlib/client/simple_action_client.h"
 #include "actionlib/client/simple_client_goal_state.h"
-#include "object_recognition_msgs/ObjectRecognitionAction.h"
-#include "std_srvs/Empty.h"
 #include "pr2_controllers_msgs/JointTrajectoryAction.h"
 #include "katana_msgs/JointMovementAction.h"
 #include "tf/transform_listener.h"
@@ -33,17 +29,13 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
 
-
-
 #include "../leatra/lfd.hh"
 #include "../leatra/stringhelp.hh"
 #include "ros_lfd_lat/helpers.h"
 #include "ros_lfd_lat/LatConstants.h"
 
-typedef actionlib::SimpleActionClient<object_recognition_msgs::ObjectRecognitionAction> Or_Client;
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 typedef actionlib::SimpleActionClient<katana_msgs::JointMovementAction> MoveClient;
-//typedef actionlib::SimpleActionClient<katana>
 
 /**
  * Returns a vector with available trajectory names.
@@ -144,6 +136,8 @@ pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std
  * @return true if reachable, false otherwise
  */
 bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation);
+
+
 
 int main(int argc, char **argv);
 
