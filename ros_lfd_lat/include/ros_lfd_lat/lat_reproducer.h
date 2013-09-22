@@ -110,6 +110,17 @@ bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int
 bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int>& constraints);
 
 /**
+ * Determines whether the given object has been under a constraint before that moment or not.
+ *
+ * @param objectId Use this object.
+ * @param startStep Start searching at this step.
+ * @param constraints Use these constraints
+ * @return Number of steps till the given object has a constraint. Zero if the object has passed its constraint or is
+ * under constraint. If the startStep is greater than the number of steps in the constraints zero is returned, also.
+ */
+unsigned int stepsTillConstraint(int objectId, unsigned int startStep, const std::deque<int>& constraints);
+
+/**
  * Creates a joint trajectory goal from the given trajectory.
  *
  * @param trajectory The trajectory with the computed values
@@ -137,7 +148,8 @@ pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std
  */
 bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation);
 
-
+pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
+		const std::deque<std::deque<double> >& trajectory, bool inSimulation);
 
 int main(int argc, char **argv);
 

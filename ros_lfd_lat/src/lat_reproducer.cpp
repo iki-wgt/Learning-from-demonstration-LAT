@@ -438,6 +438,37 @@ bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int
 	return afterConstraint;
 }
 
+unsigned int stepsTillConstraint(int objectId, unsigned int startStep, const std::deque<int>& constraints)
+{
+	ROS_ASSERT(constraints.size() > 1);
+	ROS_ASSERT_MSG(objectId >= 0, "only objectIds >= 0 are valid");
+
+	unsigned int steps = 0;
+
+	if(startStep >= constraints.size())
+	{
+		ROS_WARN("startStep greater than the number of steps in the constraints. Returning zero.");
+		return steps;		// return 0
+	}
+
+	if(objectUnderConstraint(objectId, startStep, constraints)
+			|| objectAfterConstraint(objectId, startStep, constraints))
+	{
+		return steps;		// return 0
+	}
+
+	for(unsigned int step = startStep; step < constraints.size(); ++step)
+	{
+		if(constraints[step] == objectId)
+		{
+			break;		//constraint found
+		}
+		++steps;
+	}
+
+	return steps;
+}
+
 pr2_controllers_msgs::JointTrajectoryGoal createGoal(
 		const std::deque<std::deque<double> >& trajectory, bool inSimulation)
 {
@@ -538,6 +569,32 @@ bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation)
 	}
 
 	return reachable;
+}
+
+pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
+		const std::deque<std::deque<double> >& trajectory, bool inSimulation)
+{
+	pr2_controllers_msgs::JointTrajectoryGoal goal;
+	unsigned int armJointCount = ARM_JOINT_COUNT_NOT_YET_DEFINED;
+
+	goal.trajectory.joint_names = getJointNames(inSimulation);
+
+	// if the node runs in Gazebo the gripper has to be controlled
+	// with the gripper_joint_trajectory_action
+	if(inSimulation)
+	{
+		armJointCount = 5;
+	}
+	else
+	{
+		armJointCount = 6;
+	}
+
+	// ab wann wird neue Trajektorie gestartet?
+	// wie wird auf neue Trajektorie übergegangen
+	// constraints werden sauber eingehalten
+
+	return goal;
 }
 
 int main(int argc, char **argv)
