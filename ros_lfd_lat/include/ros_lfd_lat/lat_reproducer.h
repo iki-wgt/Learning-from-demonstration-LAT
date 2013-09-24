@@ -118,7 +118,7 @@ bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int
  * @return Number of steps till the given object has a constraint. Zero if the object has passed its constraint or is
  * under constraint. If the startStep is greater than the number of steps in the constraints zero is returned, also.
  */
-unsigned int stepsTillConstraint(int objectId, unsigned int startStep, const std::deque<int>& constraints);
+unsigned int getStepsTillConstraint(int objectId, unsigned int startStep, const std::deque<int>& constraints);
 
 /**
  * Creates a joint trajectory goal from the given trajectory.
@@ -148,8 +148,38 @@ pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std
  */
 bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation);
 
+/**
+ * Creates a trajectory goal, so that the currently performing trajectory is altered smoothly.
+ *
+ * The new trajectory starts in the future and alters the currently running trajectory.
+ * See this link http://wiki.ros.org/robot_mechanism_controllers/JointTrajectoryActionController
+ *
+ * @param newTrajectory The trajectory with the updated object positions.
+ * @param oldTrajectory The trajectory with the old object positions.
+ * @param inSimulation Flag that shows if the node runs in simulation or not.
+ * @return A trajectory goal that is ready to send to the arm.
+ */
 pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
-		const std::deque<std::deque<double> >& trajectory, bool inSimulation);
+		const std::deque<std::deque<double> >& newTrajectory,
+		const std::deque<std::deque<double> >& oldTrajectory,
+		bool inSimulation
+		);
+
+/**
+ * Returns the maximum distance between the two trajectories in the given interval.
+ *
+ * @param newTrajectory The trajectory with the updated object positions.
+ * @param oldTrajectory The trajectory with the old object positions.
+ * @param startStep Left boundary of the interval
+ * @param endStep Right boundary of the interval
+ * @return absolute maximum distance in joint space
+ */
+double getMaximumDistance(
+		const std::deque<std::deque<double> >& newTrajectory,
+		const std::deque<std::deque<double> >& oldTrajectory,
+		unsigned int startStep,
+		unsigned int endStep
+		);
 
 int main(int argc, char **argv);
 

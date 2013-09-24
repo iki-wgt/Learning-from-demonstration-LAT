@@ -22,6 +22,9 @@ std::string trajectoryName;
 // specifies the folder where the trajectories are stored (default user_home)
 std::string trajectoryDir;
 
+// stores the id of the object that has moved
+int movedObjectId;
+
 std::deque<int> constraints;
 
 // triggers the recalculation of the trajectory if set to true
@@ -373,6 +376,7 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 							objects[objIdx].set_coordinates(positions);
 
 							// trigger recalculation
+							movedObjectId = (int)objIdx;
 							recalculateTrajectory = true;
 						}
 					}
@@ -438,7 +442,7 @@ bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int
 	return afterConstraint;
 }
 
-unsigned int stepsTillConstraint(int objectId, unsigned int startStep, const std::deque<int>& constraints)
+unsigned int getStepsTillConstraint(int objectId, unsigned int startStep, const std::deque<int>& constraints)
 {
 	ROS_ASSERT(constraints.size() > 1);
 	ROS_ASSERT_MSG(objectId >= 0, "only objectIds >= 0 are valid");
@@ -572,7 +576,9 @@ bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation)
 }
 
 pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
-		const std::deque<std::deque<double> >& trajectory, bool inSimulation)
+		const std::deque<std::deque<double> >& newTrajectory,
+		const std::deque<std::deque<double> >& oldTrajectory,
+		bool inSimulation)
 {
 	pr2_controllers_msgs::JointTrajectoryGoal goal;
 	unsigned int armJointCount = ARM_JOINT_COUNT_NOT_YET_DEFINED;
@@ -590,11 +596,27 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		armJointCount = 6;
 	}
 
+	unsigned int currentStep = getCurrentStepNo();
+	unsigned int stepsTillConstraint = getStepsTillConstraint(movedObjectId, currentStep, constraints);
+
+	ROS_INFO("createUpdateGoal called. CurrentStep: %u stepsTillConstraint: %u", currentStep, stepsTillConstraint);
 	// ab wann wird neue Trajektorie gestartet?
 	// wie wird auf neue Trajektorie übergegangen
 	// constraints werden sauber eingehalten
 
 	return goal;
+}
+
+double getMaximumDistance(
+		const std::deque<std::deque<double> >& newTrajectory,
+		const std::deque<std::deque<double> >& oldTrajectory,
+		unsigned int startStep,
+		unsigned int endStep
+		)
+{
+	double maximumDistance = 0.0;
+
+	return maximumDistance;
 }
 
 int main(int argc, char **argv)
@@ -746,12 +768,13 @@ int main(int argc, char **argv)
 					ROS_INFO("Recalculation of trajecotry triggered.");
 					recalculateTrajectory = false;
 
-					reproducedTrajectory =
+					std::deque<std::deque<double> > newTrajectory =
 							lfd.reproduce(
 									objects, "/" + trajectoryName,
 									constraints, trajectoryDir.c_str(), true, drawGraph);	// useInterim set to true
 
 					ROS_INFO("Recalculation finished");
+					createUpdatedGoal(newTrajectory, reproducedTrajectory, inSimulation);
 				}
 
 				ros::Duration(0.001).sleep();
