@@ -614,8 +614,22 @@ double getMaximumDistance(
 		unsigned int endStep
 		)
 {
+	ROS_ASSERT_MSG(newTrajectory.size() == oldTrajectory.size(), "trajectories don't have the same dimensions!");
+	ROS_ASSERT_MSG(newTrajectory[0].size() == oldTrajectory[0].size(), "trajectories don't have the same length");
+
 	double maximumDistance = 0.0;
 
+	for (unsigned int dimension = 0; dimension < newTrajectory.size(); ++dimension)
+	{
+		for (unsigned int step = startStep; step <= endStep; ++step)
+		{
+			double distance = fabs(newTrajectory[dimension][step] - oldTrajectory[dimension][step]);
+			if(distance > maximumDistance)
+			{
+				maximumDistance = distance;
+			}
+		}
+	}
 	return maximumDistance;
 }
 

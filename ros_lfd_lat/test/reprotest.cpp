@@ -281,13 +281,13 @@ TEST(TestSuite, testGetMaximumDistance)
 	ASSERT_DOUBLE_EQ(2.55, getMaximumDistance(newTrajectory, oldTrajectory, 1, 3));
 	ASSERT_DOUBLE_EQ(2.55, getMaximumDistance(newTrajectory, oldTrajectory, 1, 4));
 
-	ASSERT_DOUBLE_EQ(1.8, getMaximumDistance(newTrajectory, oldTrajectory, 11, 14));
-	ASSERT_DOUBLE_EQ(1.8, getMaximumDistance(newTrajectory, oldTrajectory, 12, 14));
-	ASSERT_DOUBLE_EQ(1.8, getMaximumDistance(newTrajectory, oldTrajectory, 13, 14));
+	ASSERT_DOUBLE_EQ(2.0, getMaximumDistance(newTrajectory, oldTrajectory, 11, 14));
+	ASSERT_DOUBLE_EQ(2.0, getMaximumDistance(newTrajectory, oldTrajectory, 12, 14));
+	ASSERT_DOUBLE_EQ(2.0, getMaximumDistance(newTrajectory, oldTrajectory, 13, 14));
 
 	ASSERT_DOUBLE_EQ(1.6, getMaximumDistance(newTrajectory, oldTrajectory, 3, 7));
 	ASSERT_DOUBLE_EQ(2.1, getMaximumDistance(newTrajectory, oldTrajectory, 2, 7));
-	ASSERT_DOUBLE_EQ(1.1, getMaximumDistance(newTrajectory, oldTrajectory, 7, 11));
+	ASSERT_DOUBLE_EQ(1.8, getMaximumDistance(newTrajectory, oldTrajectory, 7, 11));
 }
 
 TEST(TestSuite, testBlaBla)
