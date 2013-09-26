@@ -641,8 +641,8 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 
 			for (unsigned int joint = 0; joint < goal.trajectory.points.at(step).positions.size(); ++joint)
 			{
-				ROS_INFO("step: %u, joint: %u, newTraIdx: %u",
-						step, joint, currentStepThinned + POINTS_IN_FUTURE + step - 4);
+				//ROS_INFO("step: %u, joint: %u, newTraIdx: %u",
+				//		step, joint, currentStepThinned + POINTS_IN_FUTURE + step - 4);
 				goal.trajectory.points.at(step).positions.at(joint) =
 						newTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE + step - 4);
 
@@ -650,7 +650,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 			}
 		}
 
-		goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(REPRODUCE_HZ * POINTS_IN_FUTURE);
+		goal.trajectory.header.stamp = ros::Time::now() + ros::Duration( POINTS_IN_FUTURE / REPRODUCE_HZ);
 	}
 	else
 	{
@@ -877,7 +877,11 @@ int main(int argc, char **argv)
 									constraints, trajectoryDir.c_str(), true, drawGraph);	// useInterim set to true
 
 					ROS_INFO("Recalculation finished");
-					createUpdatedGoal(newTrajectory, reproducedTrajectory, inSimulation);
+					pr2_controllers_msgs::JointTrajectoryGoal updatedGoal =
+							createUpdatedGoal(newTrajectory, reproducedTrajectory, inSimulation);
+
+					ROS_INFO("Sending now updated goal");
+					trajClient.sendGoal(updatedGoal);
 				}
 
 				ros::Duration(0.001).sleep();
