@@ -168,8 +168,8 @@ void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool
 
 		// desired initial position
 		gripperGoal.trajectory.points[1].positions.resize(2);
-		gripperGoal.trajectory.points[1].positions[0] = trajectory[5][0];
-		gripperGoal.trajectory.points[1].positions[1] = trajectory[6][0];
+		gripperGoal.trajectory.points[1].positions[0] = trajectory.at(5).at(0);
+		gripperGoal.trajectory.points[1].positions[1] = trajectory.at(6).at(0);
 		gripperGoal.trajectory.points[1].velocities.resize(2);
 		gripperGoal.trajectory.points[1].velocities[0] = 0.0;
 		gripperGoal.trajectory.points[1].velocities[1] = 0.0;
@@ -178,7 +178,7 @@ void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool
 
 	moveGoal.jointGoal.position.resize(armJointCount);
 	for (unsigned int jointIndex = 0; jointIndex < armJointCount; ++jointIndex) {
-		moveGoal.jointGoal.position[jointIndex] = trajectory[jointIndex][0];
+		moveGoal.jointGoal.position.at(jointIndex) = trajectory.at(jointIndex).at(0);
 	}
 
 	ROS_INFO("Moving arm to initial position.");
@@ -282,7 +282,7 @@ bool isObjectStored(const std::string objName)
 {
 	for (unsigned int objIdx = 0; objIdx < objects.size(); ++objIdx)
 	{
-		if(objects[objIdx].get_name() == objName)
+		if(objects.at(objIdx).get_name() == objName)
 		{
 			return true;
 		}
@@ -296,7 +296,7 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 	tf::TransformListener tfListener;
 
 	for (unsigned int markerIdx = 0; markerIdx < markers->markers.size(); ++markerIdx) {
-		ar_track_alvar::AlvarMarker marker = markers->markers[markerIdx];
+		ar_track_alvar::AlvarMarker marker = markers->markers.at(markerIdx);
 		if(marker.id == IKEA_CUP_SOLBRAEND_BLUE_ID || marker.id == COCA_COLA_CAN_250ML_ID)
 		{
 			// transform marker coordinates in correct frame
@@ -347,9 +347,9 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 					unsigned int objIdx;
 					for(objIdx = 0; objIdx < objects.size(); ++objIdx)
 					{
-						if(objects[objIdx].get_name() == OBJECT_NAMES[marker.id])
+						if(objects.at(objIdx).get_name() == OBJECT_NAMES[marker.id])
 						{
-							obj = objects[objIdx];
+							obj = objects.at(objIdx);
 							break;
 						}
 					}
@@ -373,7 +373,7 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 							positions.push_back(pointStampedOut.point.x);
 							positions.push_back(pointStampedOut.point.y);
 							positions.push_back(pointStampedOut.point.z);
-							objects[objIdx].set_coordinates(positions);
+							objects.at(objIdx).set_coordinates(positions);
 
 							// trigger recalculation
 							movedObjectId = (int)objIdx;
@@ -416,7 +416,7 @@ bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int
 
 	bool underConstraint = false;
 
-	if(constraints[step] == objectId)
+	if(constraints.at(step) == objectId)
 	{
 		underConstraint = true;
 	}
@@ -432,7 +432,7 @@ bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int
 	bool afterConstraint = false;
 
 	for (unsigned int currentStep = 1; currentStep <= step; ++currentStep) {
-		if(constraints[currentStep - 1] == objectId && constraints[currentStep] != objectId)
+		if(constraints.at(currentStep - 1) == objectId && constraints.at(currentStep) != objectId)
 		{
 			afterConstraint = true;
 			break;
@@ -463,7 +463,7 @@ unsigned int getStepsTillConstraint(int objectId, unsigned int startStep, const 
 
 	for(unsigned int step = startStep; step < constraints.size(); ++step)
 	{
-		if(constraints[step] == objectId)
+		if(constraints.at(step) == objectId)
 		{
 			break;		//constraint found
 		}
@@ -480,7 +480,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createGoal(
 	pr2_controllers_msgs::JointTrajectoryGoal goal;
 
 	goal.trajectory.joint_names = getJointNames(inSimulation);
-	goal.trajectory.points.resize(trajectory[0].size());
+	goal.trajectory.points.resize(trajectory.at(0).size());
 
 	// if the node runs in Gazebo the gripper has to be controlled
 	// with the gripper_joint_trajectory_action
@@ -499,15 +499,15 @@ pr2_controllers_msgs::JointTrajectoryGoal createGoal(
 	// copy the waypoints
 	for (unsigned int pointNo = 0; pointNo < trajectory[0].size(); ++pointNo)
 	{
-		goal.trajectory.points[pointNo].
+		goal.trajectory.points.at(pointNo).
 			positions.resize(armJointCount);
 
-		goal.trajectory.points[pointNo].time_from_start =
+		goal.trajectory.points.at(pointNo).time_from_start =
 				ros::Duration(1.0 / REPRODUCE_HZ * pointNo + (TIME_FROM_START));
 
 		for (unsigned int jointNo = 0; jointNo < armJointCount; ++jointNo)
 		{
-			goal.trajectory.points[pointNo].positions[jointNo] =
+			goal.trajectory.points.at(pointNo).positions.at(jointNo) =
 					trajectory.at(jointNo).at(pointNo);
 		}
 	}
@@ -528,15 +528,15 @@ pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std
 	// copy the waypoints
 	for (unsigned int pointNo = 0; pointNo < trajectory[0].size(); ++pointNo)
 	{
-		gripperGoal.trajectory.points[pointNo].positions.resize(GRIPPER_JOINT_COUNT);
-		gripperGoal.trajectory.points[pointNo].velocities.resize(GRIPPER_JOINT_COUNT);
+		gripperGoal.trajectory.points.at(pointNo).positions.resize(GRIPPER_JOINT_COUNT);
+		gripperGoal.trajectory.points.at(pointNo).velocities.resize(GRIPPER_JOINT_COUNT);
 
-		gripperGoal.trajectory.points[pointNo].time_from_start =
+		gripperGoal.trajectory.points.at(pointNo).time_from_start =
 			ros::Duration(1.0 / REPRODUCE_HZ * pointNo + (TIME_FROM_START));
 
 		for (unsigned int jointNo = 0; jointNo < GRIPPER_JOINT_COUNT; ++jointNo)
 		{
-			gripperGoal.trajectory.points[pointNo].positions[jointNo] =
+			gripperGoal.trajectory.points.at(pointNo).positions.at(jointNo) =
 				trajectory.at(jointNo + 5).at(pointNo);		// gripper joints are number 5 and 6
 
 			// velocity not needed, so set it to zero
@@ -621,7 +621,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		{
 			goal.trajectory.points.at(transitionStep).positions.resize(armJointCount);
 
-			for (unsigned int joint = 0; joint < goal.trajectory.points[transitionStep].positions.size(); ++joint)
+			for (unsigned int joint = 0; joint < goal.trajectory.points.at(transitionStep).positions.size(); ++joint)
 			{
 				goal.trajectory.points.at(transitionStep).positions.at(joint) =
 					oldTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE)
@@ -665,7 +665,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		{
 			goal.trajectory.points.at(transitionStep).positions.resize(armJointCount);
 
-			for (unsigned int joint = 0; joint < goal.trajectory.points[transitionStep].positions.size(); ++joint)
+			for (unsigned int joint = 0; joint < goal.trajectory.points.at(transitionStep).positions.size(); ++joint)
 			{
 				goal.trajectory.points.at(transitionStep).positions.at(joint) =
 					oldTrajectory.at(joint).at(currentStepThinned) * (1 - TRANSITION_ARRAY[transitionStep])
@@ -712,7 +712,7 @@ double getMaximumDistance(
 	{
 		for (unsigned int step = startStep; step <= endStep; ++step)
 		{
-			double distance = fabs(newTrajectory[dimension][step] - oldTrajectory[dimension][step]);
+			double distance = fabs(newTrajectory.at(dimension).at(step) - oldTrajectory.at(dimension).at(step));
 			if(distance > maximumDistance)
 			{
 				maximumDistance = distance;
