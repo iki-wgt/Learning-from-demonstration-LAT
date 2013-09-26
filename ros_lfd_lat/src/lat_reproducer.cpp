@@ -597,12 +597,101 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 	}
 
 	unsigned int currentStep = getCurrentStepNo();
+	unsigned int currentStepThinned = currentStep / THINNING_FACTOR;
 	unsigned int stepsTillConstraint = getStepsTillConstraint(movedObjectId, currentStep, constraints);
 
 	ROS_INFO("createUpdateGoal called. CurrentStep: %u stepsTillConstraint: %u", currentStep, stepsTillConstraint);
 	// ab wann wird neue Trajektorie gestartet?
 	// wie wird auf neue Trajektorie übergegangen
 	// constraints werden sauber eingehalten
+
+	unsigned int newTrajectorySize = oldTrajectory[0].size() - currentStepThinned;
+
+	if(stepsTillConstraint >= POINTS_IN_FUTURE)
+	{
+		// insert new trajectory after POINTS_IN_FUTURE steps
+		newTrajectorySize -= POINTS_IN_FUTURE;	// the new trajectory starts after POINTS_IN_FUTURE steps
+		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
+
+		ROS_INFO("newTrajectorySize: %u, oldTrajectory[0].size(): %zu", newTrajectorySize, oldTrajectory[0].size());
+		goal.trajectory.points.resize(newTrajectorySize);
+
+		// transition between old and new trajectory
+		for (int transitionStep = 0; transitionStep < 4; ++transitionStep)
+		{
+			goal.trajectory.points.at(transitionStep).positions.resize(armJointCount);
+
+			for (unsigned int joint = 0; joint < goal.trajectory.points[transitionStep].positions.size(); ++joint)
+			{
+				goal.trajectory.points.at(transitionStep).positions.at(joint) =
+					oldTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE)
+						* (1 - TRANSITION_ARRAY[transitionStep])
+					+ newTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE)
+						* TRANSITION_ARRAY[transitionStep];
+
+				goal.trajectory.points.at(transitionStep).time_from_start =
+								ros::Duration(1.0 / REPRODUCE_HZ * transitionStep);
+			}
+		}
+
+		// copy the waypoints
+		for (unsigned int step = 4; step < goal.trajectory.points.size(); ++step)
+		{
+			goal.trajectory.points.at(step).positions.resize(armJointCount);
+
+			for (unsigned int joint = 0; joint < goal.trajectory.points.at(step).positions.size(); ++joint)
+			{
+				ROS_INFO("step: %u, joint: %u, newTraIdx: %u",
+						step, joint, currentStepThinned + POINTS_IN_FUTURE + step - 4);
+				goal.trajectory.points.at(step).positions.at(joint) =
+						newTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE + step - 4);
+
+				goal.trajectory.points.at(step).time_from_start = ros::Duration(1.0 / REPRODUCE_HZ * step);
+			}
+		}
+
+		goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(REPRODUCE_HZ * POINTS_IN_FUTURE);
+	}
+	else
+	{
+		// insert immediately
+		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
+
+		goal.trajectory.points.resize(newTrajectorySize);
+
+		// transition between old and new trajectory
+		// same as above except POINTS_IN_FUTURE is missing
+		for (int transitionStep = 0; transitionStep < 4; ++transitionStep)
+		{
+			goal.trajectory.points.at(transitionStep).positions.resize(armJointCount);
+
+			for (unsigned int joint = 0; joint < goal.trajectory.points[transitionStep].positions.size(); ++joint)
+			{
+				goal.trajectory.points.at(transitionStep).positions.at(joint) =
+					oldTrajectory.at(joint).at(currentStepThinned) * (1 - TRANSITION_ARRAY[transitionStep])
+					+ newTrajectory.at(joint).at(currentStepThinned) * TRANSITION_ARRAY[transitionStep];
+
+				goal.trajectory.points.at(transitionStep).time_from_start =
+												ros::Duration(1.0 / REPRODUCE_HZ * transitionStep);
+			}
+		}
+
+		// copy the waypoints
+		for (unsigned int step = 4; step < goal.trajectory.points.size(); ++step)
+		{
+			goal.trajectory.points.at(step).positions.resize(armJointCount);
+
+			for (unsigned int joint = 0; joint < goal.trajectory.points.at(step).positions.size(); ++joint)
+			{
+				goal.trajectory.points.at(step).positions.at(joint) =
+						newTrajectory.at(joint).at(currentStepThinned + step - 4);
+
+				goal.trajectory.points.at(step).time_from_start = ros::Duration(1.0 / REPRODUCE_HZ * step);
+			}
+		}
+
+		goal.trajectory.header.stamp = ros::Time::now();
+	}
 
 	return goal;
 }
