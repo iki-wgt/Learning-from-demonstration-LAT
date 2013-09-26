@@ -601,9 +601,6 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 	unsigned int stepsTillConstraint = getStepsTillConstraint(movedObjectId, currentStep, constraints);
 
 	ROS_INFO("createUpdateGoal called. CurrentStep: %u stepsTillConstraint: %u", currentStep, stepsTillConstraint);
-	// ab wann wird neue Trajektorie gestartet?
-	// wie wird auf neue Trajektorie übergegangen
-	// constraints werden sauber eingehalten
 
 	unsigned int newTrajectorySize = oldTrajectory[0].size() - currentStepThinned;
 
@@ -696,6 +693,108 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 	return goal;
 }
 
+pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGripperGoal(
+		const std::deque<std::deque<double> >& newTrajectory,
+		const std::deque<std::deque<double> >& oldTrajectory)
+{
+	ROS_ASSERT_MSG(newTrajectory.size() == oldTrajectory.size(), "trajectories don't have the same dimensions!");
+	ROS_ASSERT_MSG(newTrajectory[0].size() == oldTrajectory[0].size(), "trajectories don't have the same length");
+
+	pr2_controllers_msgs::JointTrajectoryGoal goal;
+	goal.trajectory.joint_names = gripperJointNames;
+
+	unsigned int currentStep = getCurrentStepNo();
+	unsigned int currentStepThinned = currentStep / THINNING_FACTOR;
+	unsigned int stepsTillConstraint = getStepsTillConstraint(movedObjectId, currentStep, constraints);
+
+	unsigned int newTrajectorySize = oldTrajectory[0].size() - currentStepThinned;
+
+	if(stepsTillConstraint >= POINTS_IN_FUTURE)
+	{
+		// insert new trajectory after POINTS_IN_FUTURE steps
+		newTrajectorySize -= POINTS_IN_FUTURE;	// the new trajectory starts after POINTS_IN_FUTURE steps
+		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
+
+		ROS_INFO("newTrajectorySize: %u, oldTrajectory[0].size(): %zu", newTrajectorySize, oldTrajectory[0].size());
+		goal.trajectory.points.resize(newTrajectorySize);
+
+		// transition between old and new trajectory
+		for (int transitionStep = 0; transitionStep < 4; ++transitionStep)
+		{
+			goal.trajectory.points.at(transitionStep).positions.resize(GRIPPER_JOINT_COUNT);
+
+			for (unsigned int joint = 0; joint < goal.trajectory.points.at(transitionStep).positions.size(); ++joint)
+			{
+				goal.trajectory.points.at(transitionStep).positions.at(joint) =
+					oldTrajectory.at(joint + 5).at(currentStepThinned + POINTS_IN_FUTURE)
+						* (1 - TRANSITION_ARRAY[transitionStep])
+					+ newTrajectory.at(joint + 5).at(currentStepThinned + POINTS_IN_FUTURE)
+						* TRANSITION_ARRAY[transitionStep];
+
+				goal.trajectory.points.at(transitionStep).time_from_start =
+								ros::Duration(1.0 / REPRODUCE_HZ * transitionStep);
+			}
+		}
+
+		// copy the waypoints
+		for (unsigned int step = 4; step < goal.trajectory.points.size(); ++step)
+		{
+			goal.trajectory.points.at(step).positions.resize(GRIPPER_JOINT_COUNT);
+
+			for (unsigned int joint = 0; joint < goal.trajectory.points.at(step).positions.size(); ++joint)
+			{
+				goal.trajectory.points.at(step).positions.at(joint) =
+						newTrajectory.at(joint + 5).at(currentStepThinned + POINTS_IN_FUTURE + step - 4);
+
+				goal.trajectory.points.at(step).time_from_start = ros::Duration(1.0 / REPRODUCE_HZ * step);
+			}
+		}
+
+		goal.trajectory.header.stamp = ros::Time::now() + ros::Duration( POINTS_IN_FUTURE / REPRODUCE_HZ);
+	}
+	else
+	{
+		// insert immediately
+		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
+
+		goal.trajectory.points.resize(newTrajectorySize);
+
+		// transition between old and new trajectory
+		// same as above except POINTS_IN_FUTURE is missing
+		for (int transitionStep = 0; transitionStep < 4; ++transitionStep)
+		{
+			goal.trajectory.points.at(transitionStep).positions.resize(GRIPPER_JOINT_COUNT);
+
+			for (unsigned int joint = 0; joint < goal.trajectory.points.at(transitionStep).positions.size(); ++joint)
+			{
+				goal.trajectory.points.at(transitionStep).positions.at(joint) =
+					oldTrajectory.at(joint + 5).at(currentStepThinned) * (1 - TRANSITION_ARRAY[transitionStep])
+					+ newTrajectory.at(joint + 5).at(currentStepThinned) * TRANSITION_ARRAY[transitionStep];
+
+				goal.trajectory.points.at(transitionStep).time_from_start =
+												ros::Duration(1.0 / REPRODUCE_HZ * transitionStep);
+			}
+		}
+
+		// copy the waypoints
+		for (unsigned int step = 4; step < goal.trajectory.points.size(); ++step)
+		{
+			goal.trajectory.points.at(step).positions.resize(GRIPPER_JOINT_COUNT);
+
+			for (unsigned int joint = 0; joint < goal.trajectory.points.at(step).positions.size(); ++joint)
+			{
+				goal.trajectory.points.at(step).positions.at(joint) =
+						newTrajectory.at(joint + 5).at(currentStepThinned + step - 4);
+
+				goal.trajectory.points.at(step).time_from_start = ros::Duration(1.0 / REPRODUCE_HZ * step);
+			}
+		}
+
+		goal.trajectory.header.stamp = ros::Time::now();
+	}
+
+	return goal;
+}
 double getMaximumDistance(
 		const std::deque<std::deque<double> >& newTrajectory,
 		const std::deque<std::deque<double> >& oldTrajectory,
@@ -882,6 +981,14 @@ int main(int argc, char **argv)
 
 					ROS_INFO("Sending now updated goal");
 					trajClient.sendGoal(updatedGoal);
+
+					if(inSimulation)
+					{
+						pr2_controllers_msgs::JointTrajectoryGoal updatedGripperGoal =
+												createUpdatedGripperGoal(newTrajectory, reproducedTrajectory);
+
+						gripperClient.sendGoal(updatedGripperGoal);
+					}
 				}
 
 				ros::Duration(0.001).sleep();

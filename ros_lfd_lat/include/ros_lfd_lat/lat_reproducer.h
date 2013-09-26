@@ -166,6 +166,23 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		);
 
 /**
+ * Creates a gripper trajectory goal, so that the currently performing trajectory is altered smoothly.
+ *
+ * The new trajectory starts in the future and alters the currently running trajectory.
+ * See this link http://wiki.ros.org/robot_mechanism_controllers/JointTrajectoryActionController
+ *
+ * This function is only used in simulation.
+ *
+ * @param newTrajectory The trajectory with the updated object positions.
+ * @param oldTrajectory The trajectory with the old object positions.
+ * @return A trajectory goal that is ready to send to the gripper.
+ */
+pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGripperGoal(
+		const std::deque<std::deque<double> >& newTrajectory,
+		const std::deque<std::deque<double> >& oldTrajectory
+		);
+
+/**
  * Returns the maximum distance between the two trajectories in the given interval.
  *
  * @param newTrajectory The trajectory with the updated object positions.
