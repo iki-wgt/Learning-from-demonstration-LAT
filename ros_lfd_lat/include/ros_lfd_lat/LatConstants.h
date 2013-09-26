@@ -20,7 +20,8 @@ const std::string USE_USER_SELECT_STRING = "user_select";
 const unsigned int ARM_JOINT_COUNT_NOT_YET_DEFINED = 999;
 const double ARM_RANGE = 0.6;		// TODO: Katana specific
 const unsigned int POINTS_IN_FUTURE = 3;
-const double TRANSITION_ARRAY[] = {0.0, 0.30, 0.70, 0.95};
+const unsigned int TRANSITION_POINT_COUNT = 4;
+const double TRANSITION_ARRAY[] = {0.0, 0.30, 0.70, 0.95};		// Length is equal to TRANSITIO_POINT_COUNT
 
 // threshold 8% of max deviation
 const double CONSTRAINT_THRESHOLD = 0.08;

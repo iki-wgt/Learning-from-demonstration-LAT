@@ -27,6 +27,9 @@ int movedObjectId;
 
 std::deque<int> constraints;
 
+// how many times has the trajectory been recalculated?
+unsigned int recalculationCount = 0;
+
 // triggers the recalculation of the trajectory if set to true
 bool recalculateTrajectory = false;
 
@@ -400,6 +403,8 @@ unsigned int getCurrentStepNo()
 	if(timeDiffSecs >= 0)
 	{
 		currentStepNo = timeDiffSecs * RECORDING_HZ;
+		currentStepNo -= TRANSITION_POINT_COUNT * recalculationCount;	// Subtract the points that were added in the
+																		// transition between old and new trajectory
 	}
 	else
 	{
@@ -713,13 +718,14 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGripperGoal(
 	{
 		// insert new trajectory after POINTS_IN_FUTURE steps
 		newTrajectorySize -= POINTS_IN_FUTURE;	// the new trajectory starts after POINTS_IN_FUTURE steps
-		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
+		newTrajectorySize += TRANSITION_POINT_COUNT;
+			// TRANSITION_POINT_COUNT points are added for the transition between old and new trajectory
 
 		ROS_INFO("newTrajectorySize: %u, oldTrajectory[0].size(): %zu", newTrajectorySize, oldTrajectory[0].size());
 		goal.trajectory.points.resize(newTrajectorySize);
 
 		// transition between old and new trajectory
-		for (int transitionStep = 0; transitionStep < 4; ++transitionStep)
+		for (unsigned int transitionStep = 0; transitionStep < TRANSITION_POINT_COUNT; ++transitionStep)
 		{
 			goal.trajectory.points.at(transitionStep).positions.resize(GRIPPER_JOINT_COUNT);
 
@@ -737,7 +743,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGripperGoal(
 		}
 
 		// copy the waypoints
-		for (unsigned int step = 4; step < goal.trajectory.points.size(); ++step)
+		for (unsigned int step = TRANSITION_POINT_COUNT; step < goal.trajectory.points.size(); ++step)
 		{
 			goal.trajectory.points.at(step).positions.resize(GRIPPER_JOINT_COUNT);
 
@@ -755,13 +761,14 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGripperGoal(
 	else
 	{
 		// insert immediately
-		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
+		newTrajectorySize += TRANSITION_POINT_COUNT;
+			// TRANSITION_POINT_COUNT points are added for the transition between old and new trajectory
 
 		goal.trajectory.points.resize(newTrajectorySize);
 
 		// transition between old and new trajectory
 		// same as above except POINTS_IN_FUTURE is missing
-		for (int transitionStep = 0; transitionStep < 4; ++transitionStep)
+		for (unsigned int transitionStep = 0; transitionStep < TRANSITION_POINT_COUNT; ++transitionStep)
 		{
 			goal.trajectory.points.at(transitionStep).positions.resize(GRIPPER_JOINT_COUNT);
 
@@ -777,7 +784,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGripperGoal(
 		}
 
 		// copy the waypoints
-		for (unsigned int step = 4; step < goal.trajectory.points.size(); ++step)
+		for (unsigned int step = TRANSITION_POINT_COUNT; step < goal.trajectory.points.size(); ++step)
 		{
 			goal.trajectory.points.at(step).positions.resize(GRIPPER_JOINT_COUNT);
 
@@ -969,6 +976,7 @@ int main(int argc, char **argv)
 				{
 					ROS_INFO("Recalculation of trajecotry triggered.");
 					recalculateTrajectory = false;
+					recalculationCount++;
 
 					std::deque<std::deque<double> > newTrajectory =
 							lfd.reproduce(
