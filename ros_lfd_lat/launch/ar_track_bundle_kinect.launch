@@ -1,0 +1,12 @@
+<launch>
+  <include file="$(find openni_launch)/launch/openni.launch" />
+  <include file="$(find ar_track_alvar)/launch/pr2_bundle.launch">
+    <arg name="cam_info_topic" value="/camera/rgb/camera_info" />
+    <arg name="cam_image_topic" value="/camera/rgb/image_color" />
+    <arg name="output_frame" value="/camera_link" />
+    <arg name="marker_size" value="3.0" />
+    <arg name="max_new_marker_error" value="0.08" />
+    <arg name="bundle_files" value="/home/benny/Dropbox/Master-Thesis/Coke.xml /home/benny/Dropbox/Master-Thesis/cup.xml" />
+  </include>
+  <node pkg="rviz" type="rviz" name="rviz" args="-d /home/benny/Dropbox/Master-Thesis/ar_track_alvar.rviz" />
+</launch>
