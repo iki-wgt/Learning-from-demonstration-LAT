@@ -20,7 +20,6 @@ void waitForEnter()
 
 void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
-	//TODO: user Recording Hz
 	if(active)
 	{
 		int dof = jointState->position.size();
@@ -30,8 +29,7 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 			std::deque<double> point;
 			for (int i = 0; i < dof; ++i)
 			{
-				//map.get_row(i).push_back(jointState->position[i]);	// does not work
-				point.push_back(jointState->position[i]);
+				point.push_back(jointState->position.at(i));
 			}
 			map.push_back(point);
 		}
@@ -80,6 +78,42 @@ void feedbackCb(
 		const object_recognition_msgs::ObjectRecognitionFeedbackConstPtr& feedback)
 {
 
+}
+
+void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
+{
+	tf::TransformListener tfListener;
+
+	for (unsigned int markerIdx = 0; markerIdx < markers->markers.size(); ++markerIdx)
+	{
+		ar_track_alvar::AlvarMarker marker = markers->markers.at(markerIdx);
+		if(marker.id == IKEA_CUP_SOLBRAEND_BLUE_ID || marker.id == COCA_COLA_CAN_250ML_ID)
+		{
+			// transform marker coordinates in correct frame
+			geometry_msgs::PointStamped pointStampedIn, pointStampedOut;
+			pointStampedIn.point = marker.pose.pose.position;
+			pointStampedIn.header.frame_id = marker.header.frame_id;
+
+			ros::Duration waitTimeout(3.0);
+			tfListener.waitForTransform(OBJECT_TARGET_FRAME, pointStampedIn.header.frame_id,
+					pointStampedIn.header.stamp, waitTimeout);
+			tfListener.transformPoint(OBJECT_TARGET_FRAME, pointStampedIn, pointStampedOut);
+
+			if(isObjectReachable(pointStampedOut))
+			{
+				object obj = object();
+
+				obj.set_name(OBJECT_NAMES[marker.id]);
+				obj.add_coordinate(pointStampedOut.point.x);
+				obj.add_coordinate(pointStampedOut.point.y);
+				obj.add_coordinate(pointStampedOut.point.z);
+			}
+			else
+			{
+				ROS_WARN("Detected object out of arm range!");
+			}
+		}
+	} // end of loop
 }
 
 

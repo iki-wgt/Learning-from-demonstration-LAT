@@ -298,7 +298,8 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 {
 	tf::TransformListener tfListener;
 
-	for (unsigned int markerIdx = 0; markerIdx < markers->markers.size(); ++markerIdx) {
+	for (unsigned int markerIdx = 0; markerIdx < markers->markers.size(); ++markerIdx)
+	{
 		ar_track_alvar::AlvarMarker marker = markers->markers.at(markerIdx);
 		if(marker.id == IKEA_CUP_SOLBRAEND_BLUE_ID || marker.id == COCA_COLA_CAN_250ML_ID)
 		{
@@ -553,31 +554,6 @@ pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std
 	gripperGoal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
 
 	return gripperGoal;
-}
-
-bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation)
-{	// TODO use something like inverse kinematics to do this
-	bool reachable = true;
-	const double Z_OFFSET = 0.22;		// katana specific
-	const double Z_MINIMUM = -0.3;
-
-	if(objectLocation.header.frame_id != OBJECT_TARGET_FRAME)
-	{
-		ROS_WARN("objects in isObjectReachable should be in OBJECT_TARGET_FRAME!");
-	}
-
-	double distance = sqrt(
-			pow(objectLocation.point.x, 2)
-			+ pow(objectLocation.point.y, 2)
-			+ pow(objectLocation.point.z - Z_OFFSET, 2)
-			);
-
-	if(distance > ARM_RANGE || objectLocation.point.z < Z_MINIMUM)
-	{
-		reachable = false;
-	}
-
-	return reachable;
 }
 
 pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(

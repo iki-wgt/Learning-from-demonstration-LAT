@@ -80,9 +80,9 @@ std::string readTrajectoryFromUser(std::string trajectoryDir = USE_USER_HOME_STR
 void printHelpMessage();
 
 /**
- * Callback for theobject tracking topic.
+ * Callback for the object tracking topic.
  */
-void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& marker);
+void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers);
 
 /**
  * Returns the number of the step that is being executed at the moment.
@@ -139,14 +139,6 @@ pr2_controllers_msgs::JointTrajectoryGoal createGoal(
  * @return The filled gripper goal
  */
 pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std::deque<double> >& trajectory);
-
-/**
- * Checks if the object is reachable by the arm.
- *
- * @param objectLocation the position of the arm in the base frame from the arm.
- * @return true if reachable, false otherwise
- */
-bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation);
 
 /**
  * Creates a trajectory goal, so that the currently performing trajectory is altered smoothly.

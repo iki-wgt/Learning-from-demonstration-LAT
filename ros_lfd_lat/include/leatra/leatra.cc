@@ -545,6 +545,19 @@ bool trajectory_lat::subtract_kate_offset(){
   return true;
 }
 
+/**
+ * Checks if the given object is stored.
+ *
+ * @param objName name of the object
+ * @return true if it is stored, false otherwise
+ */
+bool trajectory_lat::is_object_stored(const std::string& objName)
+{
+	bool isObjectStored = false;
+
+	return isObjectStored;
+}
+
 /***************************************************************************/
 
 /*                             ndmap                                       */

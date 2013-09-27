@@ -143,6 +143,7 @@ public:
 	  return map.map_is_consistent();
   }
   bool subtract_kate_offset();
+  bool is_object_stored(const std::string& objName);
 
   friend class warp_leatra;
   friend class lfd;

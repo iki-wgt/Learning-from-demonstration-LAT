@@ -196,6 +196,28 @@ TEST(TestSuite, testGetConstraintsGroup)
 	}
 }
 
+TEST(TestSuite, testIsObjectStored)
+{
+	trajectory_lat trajectory;
+
+	object coke;
+	coke.set_name("COCA-COLA-CAN-250ML");
+
+	object cup;
+	cup.set_name("IKEA-CUP-SOLBRAEND-BLUE");
+
+	ASSERT_NE(true, trajectory.is_object_stored(coke.get_name())) << "Coke has not yet been stored";
+	ASSERT_NE(true, trajectory.is_object_stored(cup.get_name())) << "Cup has not yet been stored";
+
+	trajectory.add_object(coke);
+	ASSERT_TRUE(trajectory.is_object_stored(coke.get_name())) << "Coke was stored";
+	ASSERT_NE(true, trajectory.is_object_stored(cup.get_name())) << "Cup has not yet been stored";
+
+	trajectory.add_object(cup);
+	ASSERT_TRUE(trajectory.is_object_stored(coke.get_name())) << "Coke was stored";
+	ASSERT_TRUE(trajectory.is_object_stored(cup.get_name())) << "Cup was stored";
+}
+
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv){
 testing::InitGoogleTest(&argc, argv);

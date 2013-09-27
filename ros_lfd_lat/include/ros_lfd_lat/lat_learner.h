@@ -8,6 +8,9 @@
 #include "actionlib/client/simple_client_goal_state.h"
 #include "object_recognition_msgs/ObjectRecognitionAction.h"
 #include "std_srvs/Empty.h"
+#include "tf/transform_listener.h"
+#include "geometry_msgs/PointStamped.h"
+#include "ar_track_alvar/AlvarMarkers.h"
 
 #include <string>
 #include <vector>
@@ -16,6 +19,8 @@
 #include <deque>
 #include <boost/thread.hpp>
 
+#include "ros_lfd_lat/helpers.h"
+#include "ros_lfd_lat/LatConstants.h"
 #include "../leatra/lfd.hh"
 #include "../leatra/stringhelp.hh"
 
@@ -54,6 +59,11 @@ void activeCb();
  */
 void feedbackCb(
 		const object_recognition_msgs::ObjectRecognitionFeedbackConstPtr& feedback);
+
+/**
+ * Callback for the object tracking topic.
+ */
+void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers);
 
 /**
  * \brief Main routine for learning trough averaging.
