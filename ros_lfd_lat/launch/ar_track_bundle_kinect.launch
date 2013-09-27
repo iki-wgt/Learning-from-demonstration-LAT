@@ -1,6 +1,6 @@
 <launch>
   <include file="$(find openni_launch)/launch/openni.launch" />
-  <include file="$(find ar_track_alvar)/launch/pr2_bundle.launch">
+  <include file="$(find ar_track_alvar)/launch/pr2_bundle_no_kinect.launch">
     <arg name="cam_info_topic" value="/camera/rgb/camera_info" />
     <arg name="cam_image_topic" value="/camera/rgb/image_color" />
     <arg name="output_frame" value="/camera_link" />
