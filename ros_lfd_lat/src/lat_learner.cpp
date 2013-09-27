@@ -101,12 +101,20 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 
 			if(isObjectReachable(pointStampedOut))
 			{
-				object obj = object();
+				if(!trajectory.is_object_stored(OBJECT_NAMES[marker.id]))
+				{
+					object obj = object();
 
-				obj.set_name(OBJECT_NAMES[marker.id]);
-				obj.add_coordinate(pointStampedOut.point.x);
-				obj.add_coordinate(pointStampedOut.point.y);
-				obj.add_coordinate(pointStampedOut.point.z);
+					obj.set_name(OBJECT_NAMES[marker.id]);
+					obj.add_coordinate(pointStampedOut.point.x);
+					obj.add_coordinate(pointStampedOut.point.y);
+					obj.add_coordinate(pointStampedOut.point.z);
+
+					trajectory.add_object(obj);
+					ROS_INFO("Added object %s at [%f, %f, %f]",
+							obj.get_name().c_str(),
+							pointStampedOut.point.x, pointStampedOut.point.y, pointStampedOut.point.z);
+				}
 			}
 			else
 			{
@@ -173,7 +181,7 @@ int main(int argc, char **argv)
 		map.set_name(demoName);
 
 		// get objects
-		objectClient.sendGoal(
+		/*objectClient.sendGoal(
 				object_recognition_msgs::ObjectRecognitionGoal(),
 				&objectCallback,
 				&activeCb,
@@ -188,7 +196,18 @@ int main(int argc, char **argv)
 			ROS_ERROR("State text: %s", objectClient.getState().getText().c_str());
 
 			return 1;
+		}*/
+
+		// get objects from object tracker
+		ros::Subscriber objectTrackingSubscriber = node.subscribe("ar_pose_marker", 1, objectTrackerCallback);
+
+		// wait 3 seconds
+		for (int i = 0; i < 300; ++i)
+		{
+			ros::Duration(0.01).sleep();
+			ros::spinOnce();
 		}
+		objectTrackingSubscriber.shutdown();
 
 		ROS_INFO("Finished object recognition");
 		ROS_INFO("Please press enter when you are ready to demonstrate the task");
