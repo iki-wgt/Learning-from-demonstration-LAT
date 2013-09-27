@@ -266,7 +266,7 @@ TEST(TestSuite, testGetMaximumDistance)
 		newTrajectory.push_back(std::deque<double>());
 		oldTrajectory.push_back(std::deque<double>());
 
-		for (int j = 0; j < 14; ++j)
+		for (int j = 0; j < 15; ++j)
 		{
 			newTrajectory[i].push_back(positionArray1[i][j]);
 			oldTrajectory[i].push_back(positionArray2[i][j]);
