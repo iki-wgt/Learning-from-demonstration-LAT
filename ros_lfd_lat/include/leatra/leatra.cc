@@ -555,6 +555,15 @@ bool trajectory_lat::is_object_stored(const std::string& objName)
 {
 	bool isObjectStored = false;
 
+	for (unsigned int objIdx = 0; objIdx < obj.size(); ++objIdx)
+	{
+		if(obj.at(objIdx).get_name().compare(objName) == 0)
+		{
+			isObjectStored = true;
+			break;
+		}
+	}
+
 	return isObjectStored;
 }
 
