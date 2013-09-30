@@ -14,7 +14,7 @@ std::vector<double> gripperJointPositions;
 bool allObjectsFound = false;
 lfd lfd;
 double objectShiftThreshold;
-ros::Time trajectoryStartTime;
+ros::Time trajectoryStartTime = ros::Time(0);
 
 // reproduce this trajectory
 std::string trajectoryName;
@@ -84,12 +84,12 @@ std::vector<std::string> getJointNames(bool inSimulation)
 	ros::Subscriber jointStateListener = jointNode.subscribe("joint_states",
 		1,
 		jointStateCallback);
-	ROS_INFO("subscribed");
+	ROS_INFO("subscribed to joint_states topic");
 
 	jointNames.clear();
 	jointPositions.clear();
 
-	while(jointNames.empty())
+	while(jointNames.empty() || jointPositions.empty())
 	{
 		ros::Duration(0.0001).sleep();
 		ros::spinOnce();
@@ -99,6 +99,11 @@ std::vector<std::string> getJointNames(bool inSimulation)
 	{
 		gripperJointNames.clear();
 		gripperJointPositions.clear();
+
+		if(jointNames.size() < 2)
+		{
+			ROS_ERROR("not enough joint names!");
+		}
 
 		// copy the gripper names and joint positions
 		gripperJointNames.push_back(jointNames.at(jointNames.size() - 2));
@@ -324,7 +329,6 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 						// store object
 						object obj = object();
 
-
 						obj.set_name(OBJECT_NAMES[marker.id]);
 						obj.add_coordinate(pointStampedOut.point.x);
 						obj.add_coordinate(pointStampedOut.point.y);
@@ -401,7 +405,7 @@ unsigned int getCurrentStepNo()
 	ros::Duration timeDiff = ros::Time::now() - (trajectoryStartTime + ros::Duration(TIME_FROM_START));
 	double timeDiffSecs = timeDiff.toSec();
 
-	if(timeDiffSecs >= 0)
+	if(trajectoryStartTime.toSec() > 0.0000001)
 	{
 		currentStepNo = timeDiffSecs * RECORDING_HZ;
 		currentStepNo -= TRANSITION_POINT_COUNT * recalculationCount;	// Subtract the points that were added in the
@@ -417,11 +421,15 @@ unsigned int getCurrentStepNo()
 
 bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int>& constraints)
 {
-	ROS_ASSERT(constraints.size() > 1);
+	ROS_ASSERT_MSG(constraints.size() > 1, "objectUnderConstraint called with empty constraints");
 	ROS_ASSERT_MSG(objectId >= 0, "only objectIds >= 0 are valid");
 
 	bool underConstraint = false;
-
+	if(step >= constraints.size())
+	{
+		ROS_WARN("Step is greater than constraints size in objectUnderConstraint. Returning false.");
+		return false;
+	}
 	if(constraints.at(step) == objectId)
 	{
 		underConstraint = true;
@@ -432,7 +440,7 @@ bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int
 
 bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int>& constraints)
 {
-	ROS_ASSERT(constraints.size() > 1);
+	ROS_ASSERT_MSG(constraints.size() > 1, "objectAfterConstraint called with empty constraints");
 	ROS_ASSERT_MSG(objectId >= 0, "only objectIds >= 0 are valid");
 
 	bool afterConstraint = false;
@@ -450,7 +458,7 @@ bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int
 
 unsigned int getStepsTillConstraint(int objectId, unsigned int startStep, const std::deque<int>& constraints)
 {
-	ROS_ASSERT(constraints.size() > 1);
+	ROS_ASSERT_MSG(constraints.size() > 1, "Empty constraints given.");
 	ROS_ASSERT_MSG(objectId >= 0, "only objectIds >= 0 are valid");
 
 	unsigned int steps = 0;
@@ -591,7 +599,6 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		newTrajectorySize -= POINTS_IN_FUTURE;	// the new trajectory starts after POINTS_IN_FUTURE steps
 		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
 
-		ROS_INFO("newTrajectorySize: %u, oldTrajectory[0].size(): %zu", newTrajectorySize, oldTrajectory[0].size());
 		goal.trajectory.points.resize(newTrajectorySize);
 
 		// transition between old and new trajectory
