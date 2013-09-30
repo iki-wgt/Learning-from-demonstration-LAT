@@ -23,8 +23,8 @@ const unsigned int POINTS_IN_FUTURE = 3;
 const unsigned int TRANSITION_POINT_COUNT = 4;
 const double TRANSITION_ARRAY[] = {0.0, 0.30, 0.70, 0.95};		// Length is equal to TRANSITIO_POINT_COUNT
 
-// threshold 8% of max deviation
-const double CONSTRAINT_THRESHOLD = 0.08;
+// threshold 6% of max deviation
+const double CONSTRAINT_THRESHOLD = 0.06;
 
 // consts for program argument processing
 const unsigned int NO_OF_ARGS						= 6;

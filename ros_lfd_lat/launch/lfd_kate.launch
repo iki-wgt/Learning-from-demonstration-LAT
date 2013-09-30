@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="-0.025 0 1.185 0 0 0 base_link camera 100" />
+  <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="-0.025 0 1.185 -1.5707963 0 -2.35619 base_link camera 100" />
   <node pkg="tf" type="static_transform_publisher" name="katana_link_broadcaster" args="0 0 0.473 0 0 0 base_link katana_base_link 100" />
   
   <include file="$(find ros_lfd_lat)/launch/ar_track_bundle.launch" />
