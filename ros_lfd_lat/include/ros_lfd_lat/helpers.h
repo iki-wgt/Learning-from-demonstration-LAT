@@ -14,17 +14,12 @@
 
 #include <boost/filesystem.hpp>
 
+#include "ros/ros.h"
+#include "geometry_msgs/PointStamped.h"
+
 #include "ros_lfd_lat/LatConstants.h"
 
-boost::filesystem::path getHomeDir()
-{
-	struct passwd *pw = getpwuid(getuid());
-	const char *homedir = pw->pw_dir;
-
-	boost::filesystem::path homeDir(homedir);
-
-	return homeDir;
-}
+boost::filesystem::path getHomeDir();
 
 /**
  * Checks if the object is reachable by the arm.
@@ -32,29 +27,15 @@ boost::filesystem::path getHomeDir()
  * @param objectLocation the position of the arm in the base frame from the arm.
  * @return true if reachable, false otherwise
  */
-bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation)
-{	// TODO use something like inverse kinematics to do this
-	bool reachable = true;
-	const double Z_OFFSET = 0.22;		// katana specific
-	const double Z_MINIMUM = -0.3;
+bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation);
 
-	if(objectLocation.header.frame_id != OBJECT_TARGET_FRAME)
-	{
-		ROS_WARN("objects in isObjectReachable should be in OBJECT_TARGET_FRAME!");
-	}
-
-	double distance = sqrt(
-			pow(objectLocation.point.x, 2)
-			+ pow(objectLocation.point.y, 2)
-			+ pow(objectLocation.point.z - Z_OFFSET, 2)
-			);
-
-	if(distance > ARM_RANGE || objectLocation.point.z < Z_MINIMUM)
-	{
-		reachable = false;
-	}
-
-	return reachable;
-}
+/**
+ * Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+ *
+ * Found here: http://stackoverflow.com/questions/997946/how-to-get-current-time-and-date-in-c
+ *
+ * @return the current time and date
+ */
+const std::string currentDateTime();
 
 #endif /* HELPERS_H_ */

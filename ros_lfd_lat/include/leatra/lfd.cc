@@ -192,7 +192,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 
 	  if(useInterim)
 	  {
-		  path += "/" + boost::lexical_cast<std::string>(ros::Time::now().toNSec()) + "/";
+		  path += "/" + currentDateTime() + "/";
 	  }
 
 	  mean_TS.set_name("TaskSpaceData");
@@ -202,7 +202,7 @@ std::deque< std::deque< double > > lfd::reproduce(std::deque< object > obj,
 	  model2.add_ndmapSet( mean_TS );
 	  model2.set_name("COKE");
 	  draw graph;
-	  ROS_INFO("path: %s", path.c_str());
+
 	  int drawReturn = graph.graph_std(model2, path);
 	  if(drawReturn != 0)
 		  ROS_WARN("Plotting graphs unsuccessful");

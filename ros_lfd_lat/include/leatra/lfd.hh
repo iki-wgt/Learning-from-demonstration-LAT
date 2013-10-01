@@ -7,11 +7,13 @@
 #include <fstream>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 #include "leatra.hh"
 #include "litera.hh"
 
 #include "ros_lfd_lat/LatConstants.h"
+#include "ros_lfd_lat/helpers.h"
 
 class lfd{
 

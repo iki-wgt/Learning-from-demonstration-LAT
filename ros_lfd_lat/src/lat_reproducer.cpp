@@ -957,7 +957,7 @@ int main(int argc, char **argv)
 			{
 				if(recalculateTrajectory)
 				{
-					ROS_INFO("Recalculation of trajecotry triggered.");
+					ROS_INFO("Recalculation of trajectory triggered.");
 					recalculateTrajectory = false;
 					recalculationCount++;
 
@@ -971,6 +971,7 @@ int main(int argc, char **argv)
 							createUpdatedGoal(newTrajectory, reproducedTrajectory, inSimulation);
 
 					ROS_INFO("Sending now updated goal");
+
 					trajClient.sendGoal(updatedGoal);
 
 					if(inSimulation)
