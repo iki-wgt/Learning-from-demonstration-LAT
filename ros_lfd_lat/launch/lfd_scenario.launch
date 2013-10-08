@@ -65,7 +65,6 @@
   </group>
   
   <!-- Object recognition -->
-  <include file="$(find gazebo_object_recognition_server)/server.launch" />
   <node pkg="gazebo_object_tracker" type="gazebo_object_tracker.py" name="gazebo_object_tracker" output="screen" />
 </launch>
 
