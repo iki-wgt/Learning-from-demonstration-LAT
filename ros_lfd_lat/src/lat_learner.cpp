@@ -49,27 +49,6 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 	}
 }
 
-void objectCallback(const actionlib::SimpleClientGoalState& state,
-		const object_recognition_msgs::ObjectRecognitionResultConstPtr& result)
-{
-	int objCount = result->recognized_objects.objects.size();
-	for (int i = 0; i < objCount; ++i) {
-		object obj = object();
-
-		obj.set_name(result->recognized_objects.objects[i].type.key);
-		obj.add_coordinate(
-			result->recognized_objects.objects[i].pose.pose.pose.position.x);
-		obj.add_coordinate(
-			result->recognized_objects.objects[i].pose.pose.pose.position.y);
-		obj.add_coordinate(
-			result->recognized_objects.objects[i].pose.pose.pose.position.z);
-
-		trajectory.add_object(obj);
-
-		ROS_INFO("Added object %s to trajectory.", obj.get_name().c_str());
-	}
-}
-
 void activeCb() {
 	ROS_INFO("Object recognition goal just went active");
 }
@@ -132,11 +111,6 @@ int main(int argc, char **argv)
 
 	ROS_INFO("lat_learner started");
 
-	// Initialize object recognition
-	Or_Client objectClient("object_recognition", true);
-	objectClient.waitForServer();
-	ROS_INFO("object recognition server ready");
-
 	// initialize joint state listener
 	ros::Subscriber jointStateListener = node.subscribe("joint_states",
 			1,
@@ -180,27 +154,9 @@ int main(int argc, char **argv)
 		trajectory.set_name(demoName);
 		map.set_name(demoName);
 
-		// get objects
-		/*objectClient.sendGoal(
-				object_recognition_msgs::ObjectRecognitionGoal(),
-				&objectCallback,
-				&activeCb,
-				&feedbackCb
-		);
-
-		objectClient.waitForResult();
-
-		if(objectClient.getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
-		{
-			ROS_ERROR("Error in object recognition");
-			ROS_ERROR("State text: %s", objectClient.getState().getText().c_str());
-
-			return 1;
-		}*/
-
 		// get objects from object tracker
 		ros::Subscriber objectTrackingSubscriber = node.subscribe("ar_pose_marker", 1, objectTrackerCallback);
-
+		ROS_INFO("Will now detect objects");
 		// wait 3 seconds
 		for (int i = 0; i < 300; ++i)
 		{

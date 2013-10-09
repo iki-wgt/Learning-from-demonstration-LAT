@@ -4,7 +4,7 @@
   <arg name="object_tracking_topic" default="ar_pose_marker" />
   
   <!-- Reproduce this trajectory. For an interactive selection define 'user_select'. To override launch with 'roslaunch ros_lfd_lat lat_reproduce trajectory_name:=cokeCup2' -->
-  <arg name="trajectory_name" default="cokeCupLow2" />
+  <arg name="trajectory_name" default="user_select" />
   
   <!-- Location of the trajectory. Define 'user_home' to use the users home directory. Has to be an absolute path. -->
   <arg name="trajectory_dir" default="user_home" />
