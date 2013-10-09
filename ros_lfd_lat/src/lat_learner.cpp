@@ -148,7 +148,7 @@ int main(int argc, char **argv)
 		ros::Subscriber objectTrackingSubscriber = node.subscribe("ar_pose_marker", 1, objectTrackerCallback);
 		ROS_INFO("Will now detect objects");
 		// wait 3 seconds
-		for (int i = 0; i < 300; ++i)
+		for (int i = 0; i < 40; ++i)
 		{
 			ros::Duration(0.01).sleep();
 			ros::spinOnce();
