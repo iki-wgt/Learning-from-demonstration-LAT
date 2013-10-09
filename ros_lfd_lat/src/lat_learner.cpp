@@ -49,16 +49,6 @@ void trajectoryCallback(const sensor_msgs::JointStateConstPtr& jointState)
 	}
 }
 
-void activeCb() {
-	ROS_INFO("Object recognition goal just went active");
-}
-
-void feedbackCb(
-		const object_recognition_msgs::ObjectRecognitionFeedbackConstPtr& feedback)
-{
-
-}
-
 void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 {
 	tf::TransformListener tfListener;
