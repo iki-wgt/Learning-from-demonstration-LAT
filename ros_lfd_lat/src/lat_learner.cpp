@@ -261,7 +261,8 @@ int main(int argc, char **argv)
 
 	if (saveDemos)
 	{
-		bool success = lfd.save_demo(trajectories, trajectoryName);
+		std::string directory = getHomeDir().string() + "/";
+		bool success = lfd.save_demo(trajectories, trajectoryName, directory);
 
 		if (success) {
 			ROS_INFO("Demonstration saved successfully.");
