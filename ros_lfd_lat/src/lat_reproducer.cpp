@@ -233,6 +233,42 @@ void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool
 	}
 }
 
+void moveRobotToHomePos()
+{
+	MoveClient moveClient("katana_arm_controller/joint_movement_action");
+	TrajClient gripperClient("katana_arm_controller/gripper_joint_trajectory_action");
+	moveClient.waitForServer();
+
+	katana_msgs::JointMovementGoal moveGoal;
+	moveGoal.jointGoal.name = getJointNames(true);
+
+	moveGoal.jointGoal.position.resize(5);
+	moveGoal.jointGoal.position.at(0) = 0;			// katana_motor1_pan_joint
+	moveGoal.jointGoal.position.at(1) = 2.1131;		// katana_motor2_lift_joint
+	moveGoal.jointGoal.position.at(2) = -2.1827;	// katana_motor3_lift_joint
+	moveGoal.jointGoal.position.at(3) = -2.0114;	// katana_motor4_lift_joint
+	moveGoal.jointGoal.position.at(4) = -0.0234;	// katana_motor5_wrist_roll_joint
+
+	ROS_INFO("Moving arm to home position.");
+	moveClient.sendGoal(moveGoal);
+
+	while(!moveClient.getState().isDone() && ros::ok())
+	{
+		ros::Duration(0.001).sleep();
+		ros::spinOnce();
+	}
+
+	if(moveClient.getState().state_ == moveClient.getState().SUCCEEDED)
+	{
+		ROS_INFO("Arm movement finished successfully.");
+	}
+	else
+	{
+		ROS_WARN("Arm movement finished not successfully! (%s)",
+				moveClient.getState().toString().c_str());
+	}
+}
+
 std::string readTrajectoryFromUser(std::string trajectoryDir)
 {
 	unsigned int traNumber = -2;
@@ -883,6 +919,8 @@ int main(int argc, char **argv)
 
 		ros::Subscriber objectTrackingSubscriber = nodeHandle.subscribe(objectTrackingTopic, 1, objectTrackerCallback);
 
+		moveRobotToHomePos();
+
 		ROS_INFO("Waiting till all mandatory objects are found");
 		while(!allObjectsFound)
 		{
@@ -1016,6 +1054,7 @@ int main(int argc, char **argv)
 						trajClient.getState().toString().c_str());
 			}
 
+			moveRobotToHomePos();
 		}
 		else
 		{

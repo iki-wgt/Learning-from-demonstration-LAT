@@ -69,6 +69,11 @@ void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState);
 void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool inSimulation);
 
 /**
+ * Moves the robot to a stable home position.
+ */
+void moveRobotToHomePos();
+
+/**
  * Interactive selection of the trajectory.
  * Lists the existing trajectories to the screen and prompts the user to enter the number of the trajectory.
  */
