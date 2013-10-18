@@ -13,6 +13,7 @@ const double RECORDING_HZ = 25.0;
 const unsigned int THINNING_FACTOR = 10;
 const double REPRODUCE_HZ = RECORDING_HZ / THINNING_FACTOR;
 const double TIME_FROM_START = 0;//3;
+const double SLOW_DOWN_FACTOR = 1.5;
 const unsigned int GRIPPER_JOINT_COUNT = 2;
 const std::string OBJECT_TARGET_FRAME = "/katana_base_link";
 const std::string USE_USER_HOME_STRING = "user_home";

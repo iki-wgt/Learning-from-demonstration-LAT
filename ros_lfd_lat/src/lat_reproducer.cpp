@@ -86,8 +86,8 @@ std::vector<std::string> getJointNames(bool inSimulation)
 		jointStateCallback);
 	ROS_INFO("subscribed to joint_states topic");
 
-	jointNames.clear();
-	jointPositions.clear();
+	//jointNames.clear();
+	//jointPositions.clear();
 
 	while(jointNames.empty() || jointPositions.empty())
 	{
@@ -123,8 +123,15 @@ std::vector<std::string> getJointNames(bool inSimulation)
 	}
 
 	// in real life the katana_l_finger_joint has to be removed only
-	jointPositions.pop_back();
-	jointNames.pop_back();
+	if(jointPositions.size() == 7)
+	{
+		jointPositions.pop_back();
+	}
+
+	if(jointNames.size() == 7)
+	{
+		jointNames.pop_back();
+	}
 
 	return jointNames;
 
@@ -135,10 +142,10 @@ std::vector<std::string> getJointNames(bool inSimulation)
 void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
 	ROS_INFO("In joint state callback");
+	jointPositions = jointState->position;
 	if(jointNames.empty())
 	{
 		jointNames = jointState->name;
-		jointPositions = jointState->position;
 		ROS_INFO("Copied joint names");
 	}
 }
@@ -408,8 +415,11 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 					if(movedDistance >= objectShiftThreshold)
 					{
 						// update only if the objects is before its constraint
-						if(!objectUnderConstraint(objIdx, getCurrentStepNo(), constraints)
+						// update positions if the trajectory has not started without triggering the recalculation
+						if(trajectoryStartTime.isZero() ||
+								(!objectUnderConstraint(objIdx, getCurrentStepNo(), constraints)
 								&& !objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
+							)
 						{
 							ROS_INFO("Object %s moved %fm", obj.get_name().c_str(), movedDistance);
 
@@ -419,9 +429,13 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 							positions.push_back(pointStampedOut.point.z);
 							objects.at(objIdx).set_coordinates(positions);
 
-							// trigger recalculation
-							movedObjectId = (int)objIdx;
-							recalculateTrajectory = true;
+							// before the trajectory started the recalculation does not have to triggered
+							if(!trajectoryStartTime.isZero())
+							{
+								// trigger recalculation
+								movedObjectId = (int)objIdx;
+								recalculateTrajectory = true;
+							}
 						}
 					}
 				}
@@ -438,12 +452,13 @@ unsigned int getCurrentStepNo()
 {
 	unsigned int currentStepNo = 0;
 
-	ros::Duration timeDiff = ros::Time::now() - (trajectoryStartTime + ros::Duration(TIME_FROM_START));
+	ros::Duration timeDiff =
+			ros::Time::now() - (trajectoryStartTime + ros::Duration(TIME_FROM_START) + ros::Duration(5.5));
 	double timeDiffSecs = timeDiff.toSec();
 
 	if(trajectoryStartTime.toSec() > 0.0000001)
 	{
-		currentStepNo = timeDiffSecs * RECORDING_HZ;
+		currentStepNo = timeDiffSecs * RECORDING_HZ / SLOW_DOWN_FACTOR;
 		currentStepNo -= TRANSITION_POINT_COUNT * recalculationCount;	// Subtract the points that were added in the
 																		// transition between old and new trajectory
 	}
@@ -451,7 +466,7 @@ unsigned int getCurrentStepNo()
 	{
 		ROS_ERROR("getCurrentStepNo was called before the trajectory started!");
 	}
-
+	ROS_INFO("Current step no: %u", currentStepNo / THINNING_FACTOR);
 	return currentStepNo;
 }
 
@@ -480,6 +495,11 @@ bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int
 	ROS_ASSERT_MSG(objectId >= 0, "only objectIds >= 0 are valid");
 
 	bool afterConstraint = false;
+
+	if(step > constraints.size())
+	{
+		step = constraints.size();
+	}
 
 	for (unsigned int currentStep = 1; currentStep <= step; ++currentStep) {
 		if(constraints.at(currentStep - 1) == objectId && constraints.at(currentStep) != objectId)
@@ -553,7 +573,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createGoal(
 			positions.resize(armJointCount);
 
 		goal.trajectory.points.at(pointNo).time_from_start =
-				ros::Duration(1.0 / REPRODUCE_HZ * pointNo + (TIME_FROM_START));
+				ros::Duration(1.0 / REPRODUCE_HZ * pointNo * SLOW_DOWN_FACTOR + (TIME_FROM_START));
 
 		for (unsigned int jointNo = 0; jointNo < armJointCount; ++jointNo)
 		{
@@ -562,8 +582,8 @@ pr2_controllers_msgs::JointTrajectoryGoal createGoal(
 		}
 	}
 
-	// When to start the trajectory: 0.5s from now
-	goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
+	// When to start the trajectory: 5s from now
+	goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(5.5);
 
 	return goal;
 }
@@ -625,10 +645,16 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 	unsigned int currentStepThinned = currentStep / THINNING_FACTOR;
 	unsigned int stepsTillConstraint = getStepsTillConstraint(movedObjectId, currentStep, constraints);
 
-	ROS_INFO("createUpdateGoal called. CurrentStep: %u stepsTillConstraint: %u", currentStep, stepsTillConstraint);
+	ROS_INFO("createUpdatedGoal called. CurrentStep: %u stepsTillConstraint: %u", currentStep, stepsTillConstraint);
+
+	if(oldTrajectory[0].size() < currentStepThinned)
+	{
+		ROS_WARN("The trajectory has ended already!");
+		return goal;
+	}
 
 	unsigned int newTrajectorySize = oldTrajectory[0].size() - currentStepThinned;
-
+	ROS_INFO("newTrajectorySize: %u, currentStepThinned: %u, oldSize: %zu", newTrajectorySize, currentStepThinned, oldTrajectory[0].size());
 	if(stepsTillConstraint >= POINTS_IN_FUTURE)
 	{
 		// insert new trajectory after POINTS_IN_FUTURE steps
@@ -675,6 +701,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 	}
 	else
 	{
+
 		// insert immediately
 		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
 
@@ -1010,14 +1037,18 @@ int main(int argc, char **argv)
 
 					ROS_INFO("Sending now updated goal");
 
-					trajClient.sendGoal(updatedGoal);
-
 					if(inSimulation)
 					{
+						trajClient.sendGoal(updatedGoal);
 						pr2_controllers_msgs::JointTrajectoryGoal updatedGripperGoal =
 												createUpdatedGripperGoal(newTrajectory, reproducedTrajectory);
 
 						gripperClient.sendGoal(updatedGripperGoal);
+					}
+					else
+					{
+						trajClient.cancelAllGoals();
+						trajClient.sendGoal(updatedGoal);
 					}
 				}
 
