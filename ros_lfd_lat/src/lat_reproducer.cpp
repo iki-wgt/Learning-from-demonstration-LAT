@@ -453,7 +453,7 @@ unsigned int getCurrentStepNo()
 	unsigned int currentStepNo = 0;
 
 	ros::Duration timeDiff =
-			ros::Time::now() - (trajectoryStartTime + ros::Duration(TIME_FROM_START) + ros::Duration(5.5));
+			ros::Time::now() - (trajectoryStartTime + ros::Duration(TIME_FROM_START) + ros::Duration(0.55));
 	double timeDiffSecs = timeDiff.toSec();
 
 	if(trajectoryStartTime.toSec() > 0.0000001)
@@ -1051,7 +1051,7 @@ int main(int argc, char **argv)
 						trajClient.sendGoal(updatedGoal);
 					}
 				}
-
+				ROS_INFO_THROTTLE(0.2, "step: %u", getCurrentStepNo());
 				ros::Duration(0.001).sleep();
 				ros::spinOnce();
 			}
