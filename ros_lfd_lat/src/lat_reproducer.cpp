@@ -33,6 +33,9 @@ unsigned int recalculationCount = 0;
 // triggers the recalculation of the trajectory if set to true
 bool recalculateTrajectory = false;
 
+// stores the object position when a shift is detected. This can be used to prevent position jumps
+geometry_msgs::PointStamped* newObjectPosition = NULL;
+
 std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir)
 {
 	std::string filename;
@@ -414,30 +417,58 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 					// update object position
 					if(movedDistance >= objectShiftThreshold)
 					{
-						// update only if the objects is before its constraint
-						// update positions if the trajectory has not started without triggering the recalculation
-						if(trajectoryStartTime.isZero() ||
-								(!objectUnderConstraint(objIdx, getCurrentStepNo(), constraints)
-								&& !objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
-							)
+						// sometimes the object position jumps to a wrong position and then back to the correct one
+						// these events should be avoided
+						if(newObjectPosition != NULL)
 						{
-							ROS_INFO("Object %s moved %fm", obj.get_name().c_str(), movedDistance);
+							double delta = fabs(pointStampedOut.point.x - newObjectPosition->point.x)
+									+ fabs(pointStampedOut.point.y - newObjectPosition->point.y)
+									+ fabs(pointStampedOut.point.z - newObjectPosition->point.z);
 
-							std::deque<double> positions;
-							positions.push_back(pointStampedOut.point.x);
-							positions.push_back(pointStampedOut.point.y);
-							positions.push_back(pointStampedOut.point.z);
-							objects.at(objIdx).set_coordinates(positions);
-
-							// before the trajectory started the recalculation does not have to triggered
-							if(!trajectoryStartTime.isZero())
+							if(delta < 0.012)	// no jump object really moved
 							{
-								// trigger recalculation
-								movedObjectId = (int)objIdx;
-								recalculateTrajectory = true;
+								ROS_INFO("delta: %f", delta);
+								// update only if the objects is before its constraint
+								// update positions if the trajectory has not started without triggering the recalculation
+								if(trajectoryStartTime.isZero() ||
+										(!objectUnderConstraint(objIdx, getCurrentStepNo(), constraints)
+										&& !objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
+									)
+								{
+									ROS_INFO("Object %s moved %fm to (%f/%f/%f)", obj.get_name().c_str(), movedDistance,
+											pointStampedOut.point.x, pointStampedOut.point.y, pointStampedOut.point.z);
+
+									std::deque<double> positions;
+									positions.push_back(pointStampedOut.point.x);
+									positions.push_back(pointStampedOut.point.y);
+									positions.push_back(pointStampedOut.point.z);
+									objects.at(objIdx).set_coordinates(positions);
+
+									// before the trajectory started the recalculation does not have to triggered
+									if(!trajectoryStartTime.isZero())
+									{
+										// trigger recalculation
+										movedObjectId = (int)objIdx;
+										recalculateTrajectory = true;
+									}
+								}
 							}
+							else
+							{
+								ROS_WARN("Object position jump detected!");
+							}
+
+							// clean up the old object
+							delete newObjectPosition;
+							newObjectPosition = NULL;
 						}
-					}
+						else	// newObjectPosition is NULL
+						{		// store the new position
+							newObjectPosition = new geometry_msgs::PointStamped();
+							newObjectPosition->point = pointStampedOut.point;
+						}
+
+					} // end if(movedDistance >= objectShiftThreshold)
 				}
 			}
 			else
@@ -452,11 +483,11 @@ unsigned int getCurrentStepNo()
 {
 	unsigned int currentStepNo = 0;
 
-	ros::Duration timeDiff =
-			ros::Time::now() - (trajectoryStartTime + ros::Duration(TIME_FROM_START) + ros::Duration(0.55));
+	ros::Time realStartTime = trajectoryStartTime + ros::Duration(TIME_FROM_START) - ros::Duration(0.9);
+	ros::Duration timeDiff = ros::Time::now() - realStartTime;
 	double timeDiffSecs = timeDiff.toSec();
 
-	if(trajectoryStartTime.toSec() > 0.0000001)
+	if(trajectoryStartTime.toSec() > 0.0000001 || ros::Time::now() < realStartTime)		//FIXME: geht nicht
 	{
 		currentStepNo = timeDiffSecs * RECORDING_HZ / SLOW_DOWN_FACTOR;
 		currentStepNo -= TRANSITION_POINT_COUNT * recalculationCount;	// Subtract the points that were added in the
@@ -583,7 +614,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createGoal(
 	}
 
 	// When to start the trajectory: 5s from now
-	goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(5.5);
+	goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(6);
 
 	return goal;
 }
