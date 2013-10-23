@@ -36,6 +36,8 @@ bool recalculateTrajectory = false;
 // stores the object position when a shift is detected. This can be used to prevent position jumps
 geometry_msgs::PointStamped* newObjectPosition = NULL;
 
+std::deque<std::deque<double> >* currentTrajectory = NULL;
+
 std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir)
 {
 	std::string filename;
@@ -87,10 +89,10 @@ std::vector<std::string> getJointNames(bool inSimulation)
 	ros::Subscriber jointStateListener = jointNode.subscribe("joint_states",
 		1,
 		jointStateCallback);
-	ROS_INFO("subscribed to joint_states topic");
+	//ROS_INFO("subscribed to joint_states topic");
 
-	//jointNames.clear();
-	//jointPositions.clear();
+	jointNames.clear();
+	jointPositions.clear();
 
 	while(jointNames.empty() || jointPositions.empty())
 	{
@@ -144,12 +146,12 @@ std::vector<std::string> getJointNames(bool inSimulation)
 
 void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
-	ROS_INFO("In joint state callback");
+	//ROS_INFO("In joint state callback");
 	jointPositions = jointState->position;
 	if(jointNames.empty())
 	{
 		jointNames = jointState->name;
-		ROS_INFO("Copied joint names");
+		//ROS_INFO("Copied joint names");
 	}
 }
 
@@ -481,9 +483,37 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 
 unsigned int getCurrentStepNo()
 {
+	ROS_INFO("start");
 	unsigned int currentStepNo = 0;
 
-	ros::Time realStartTime = trajectoryStartTime + ros::Duration(TIME_FROM_START) - ros::Duration(0.9);
+	if(currentTrajectory == NULL)
+	{
+		ROS_ERROR("getCurrentStepNo was called before the trajectory was calculated!");
+		return currentStepNo;
+	}
+
+	getJointNames(false);		// fetch the real joint positions
+	ROS_INFO("after joint names");
+	double minimumDelta = INFINITY;
+	unsigned int minimumStep = 0;
+	for(unsigned int step = 0; step < currentTrajectory->at(0).size(); ++step)
+	{
+		double delta = 0;
+		for(unsigned int joint = 0; joint < currentTrajectory->size() - 1; ++joint)
+		// getJointNames remove on finger joint
+		{
+			delta += fabs(currentTrajectory->at(joint).at(step) - jointPositions.at(joint));
+		}
+
+		if(delta < minimumDelta)
+		{
+			minimumDelta = delta;
+			minimumStep = step;
+		}
+	}
+
+	currentStepNo = minimumStep;
+	/*ros::Time realStartTime = trajectoryStartTime + ros::Duration(TIME_FROM_START) - ros::Duration(0.9);
 	ros::Duration timeDiff = ros::Time::now() - realStartTime;
 	double timeDiffSecs = timeDiff.toSec();
 
@@ -496,8 +526,8 @@ unsigned int getCurrentStepNo()
 	else
 	{
 		ROS_ERROR("getCurrentStepNo was called before the trajectory started!");
-	}
-	ROS_INFO("Current step no: %u", currentStepNo / THINNING_FACTOR);
+	}*/
+	ROS_INFO("Current step no: %u", currentStepNo);
 	return currentStepNo;
 }
 
@@ -1007,7 +1037,7 @@ int main(int argc, char **argv)
 			{
 				return EXIT_FAILURE;
 			}
-
+			currentTrajectory = &reproducedTrajectory;
 
 			/*for (unsigned int i = 0; i < reproducedTrajectory[0].size(); ++i) {
 				for (unsigned int j = 0; j < reproducedTrajectory.size(); ++j) {
@@ -1061,6 +1091,8 @@ int main(int argc, char **argv)
 							lfd.reproduce(
 									objects, "/" + trajectoryName,
 									constraints, trajectoryDir.c_str(), true, drawGraph);	// useInterim set to true
+
+					currentTrajectory = &newTrajectory;
 
 					ROS_INFO("Recalculation finished");
 					pr2_controllers_msgs::JointTrajectoryGoal updatedGoal =
