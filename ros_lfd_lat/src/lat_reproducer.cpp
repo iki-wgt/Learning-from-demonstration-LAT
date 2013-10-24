@@ -485,10 +485,12 @@ unsigned int getCurrentStepNo()
 
 	double minimumDelta = INFINITY;
 	unsigned int minimumStep = 0;
+
 	for(unsigned int step = 0; step < currentTrajectory->at(0).size(); ++step)
 	{
+
 		double delta = 0;
-		for(unsigned int joint = 0; joint < currentTrajectory->size() - 1; ++joint)
+		for(unsigned int joint = 0; joint < (currentTrajectory->size() - 1); ++joint)
 		// getJointNames remove on finger joint
 		{
 			delta += fabs(currentTrajectory->at(joint).at(step) - jointPositions.at(joint));
@@ -679,7 +681,8 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 	}
 
 	unsigned int currentStep = getCurrentStepNo();
-	unsigned int currentStepThinned = currentStep / THINNING_FACTOR;
+
+	unsigned int currentStepThinned = currentStep /*/ THINNING_FACTOR*/;
 	unsigned int stepsTillConstraint = getStepsTillConstraint(movedObjectId, currentStep, constraints);
 
 	ROS_INFO("createUpdatedGoal called. CurrentStep: %u stepsTillConstraint: %u", currentStep, stepsTillConstraint);
@@ -694,6 +697,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 	ROS_INFO("newTrajectorySize: %u, currentStepThinned: %u, oldSize: %zu", newTrajectorySize, currentStepThinned, oldTrajectory[0].size());
 	if(stepsTillConstraint >= POINTS_IN_FUTURE)
 	{
+		ROS_INFO("insert new trajectory after %u steps", POINTS_IN_FUTURE);
 		// insert new trajectory after POINTS_IN_FUTURE steps
 		newTrajectorySize -= POINTS_IN_FUTURE;	// the new trajectory starts after POINTS_IN_FUTURE steps
 		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
@@ -735,10 +739,11 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		}
 
 		goal.trajectory.header.stamp = ros::Time::now() + ros::Duration( POINTS_IN_FUTURE / REPRODUCE_HZ);
+		ROS_INFO("Trajectory should start at %f", goal.trajectory.header.stamp.toSec());
 	}
 	else
 	{
-
+		ROS_INFO("Insert new trajectory immediately");
 		// insert immediately
 		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
 
@@ -1077,6 +1082,8 @@ int main(int argc, char **argv)
 					ROS_INFO("Recalculation finished");
 					pr2_controllers_msgs::JointTrajectoryGoal updatedGoal =
 							createUpdatedGoal(newTrajectory, reproducedTrajectory, inSimulation);
+
+					ros::Time::sleepUntil(updatedGoal.trajectory.header.stamp - ros::Duration(0.2));
 
 					ROS_INFO("Sending now updated goal");
 
