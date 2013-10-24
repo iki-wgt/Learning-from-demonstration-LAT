@@ -9,7 +9,7 @@
 std::deque<object> objects;
 std::vector<std::string> jointNames;
 std::vector<std::string> gripperJointNames;
-std::vector<double> jointPositions;
+std::vector<double> jointPositions;			// updated constantly by jointStateCallback
 std::vector<double> gripperJointPositions;
 bool allObjectsFound = false;
 lfd lfd;
@@ -84,16 +84,6 @@ std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir)
 
 std::vector<std::string> getJointNames(bool inSimulation)
 {
-	// initialize joint state listener
-	ros::NodeHandle jointNode;
-	ros::Subscriber jointStateListener = jointNode.subscribe("joint_states",
-		1,
-		jointStateCallback);
-	//ROS_INFO("subscribed to joint_states topic");
-
-	jointNames.clear();
-	jointPositions.clear();
-
 	while(jointNames.empty() || jointPositions.empty())
 	{
 		ros::Duration(0.0001).sleep();
@@ -483,7 +473,6 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 
 unsigned int getCurrentStepNo()
 {
-	ROS_INFO("start");
 	unsigned int currentStepNo = 0;
 
 	if(currentTrajectory == NULL)
@@ -493,7 +482,7 @@ unsigned int getCurrentStepNo()
 	}
 
 	getJointNames(false);		// fetch the real joint positions
-	ROS_INFO("after joint names");
+
 	double minimumDelta = INFINITY;
 	unsigned int minimumStep = 0;
 	for(unsigned int step = 0; step < currentTrajectory->at(0).size(); ++step)
@@ -513,21 +502,8 @@ unsigned int getCurrentStepNo()
 	}
 
 	currentStepNo = minimumStep;
-	/*ros::Time realStartTime = trajectoryStartTime + ros::Duration(TIME_FROM_START) - ros::Duration(0.9);
-	ros::Duration timeDiff = ros::Time::now() - realStartTime;
-	double timeDiffSecs = timeDiff.toSec();
 
-	if(trajectoryStartTime.toSec() > 0.0000001 || ros::Time::now() < realStartTime)		//FIXME: geht nicht
-	{
-		currentStepNo = timeDiffSecs * RECORDING_HZ / SLOW_DOWN_FACTOR;
-		currentStepNo -= TRANSITION_POINT_COUNT * recalculationCount;	// Subtract the points that were added in the
-																		// transition between old and new trajectory
-	}
-	else
-	{
-		ROS_ERROR("getCurrentStepNo was called before the trajectory started!");
-	}*/
-	ROS_INFO("Current step no: %u", currentStepNo);
+	//ROS_INFO("Current step no: %u", currentStepNo);
 	return currentStepNo;
 }
 
@@ -1005,6 +981,10 @@ int main(int argc, char **argv)
 	{
 		ROS_INFO("Trajectory name known.");
 
+		// subscribe to the topics
+		ros::Subscriber jointStateListener = nodeHandle.subscribe("joint_states",
+				1,
+				jointStateCallback);
 		ros::Subscriber objectTrackingSubscriber = nodeHandle.subscribe(objectTrackingTopic, 1, objectTrackerCallback);
 
 		moveRobotToHomePos();
@@ -1114,7 +1094,7 @@ int main(int argc, char **argv)
 						trajClient.sendGoal(updatedGoal);
 					}
 				}
-				ROS_INFO_THROTTLE(0.2, "step: %u", getCurrentStepNo());
+				//ROS_INFO_THROTTLE(0.05, "step: %u", getCurrentStepNo());
 				ros::Duration(0.001).sleep();
 				ros::spinOnce();
 			}
