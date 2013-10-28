@@ -10,10 +10,10 @@
   <arg name="trajectory_dir" default="user_home" />
   
   <!-- Draw a graph of the reproduction or not.  -->
-  <arg name="draw_graph" default="false" />
+  <arg name="draw_graph" default="true" />
   
   <!-- Detect an object shift, if an object is being moved more than this threshold. (In meters).  -->
-  <arg name="object_shift_threshold" default="0.01" />
+  <arg name="object_shift_threshold" default="0.025" />
   
   <!-- Use this arm controller. (e.g. for katana_arm_controller/joint_trajectory_action) -->
   <arg name="arm_controller" default="katana_arm_controller" />

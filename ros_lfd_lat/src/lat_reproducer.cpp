@@ -112,7 +112,6 @@ std::vector<std::string> getJointNames(bool inSimulation)
 
 		if(jointPositions.size() == 7)
 		{
-			ROS_INFO("Setting gripper joint position");
 			gripperJointPositions.clear();
 
 			gripperJointPositions.push_back(
@@ -128,23 +127,27 @@ std::vector<std::string> getJointNames(bool inSimulation)
 		if(jointNames.size() == 7)
 		{
 			jointNames.pop_back();
+			jointNames.pop_back();
 		}
 
 		if(jointPositions.size() == 7)
 		{
 			jointPositions.pop_back();
+			jointPositions.pop_back();
 		}
 	}
-
-	// in real life the katana_l_finger_joint has to be removed only
-	if(jointPositions.size() > 5)
+	else
 	{
-		jointPositions.pop_back();
-	}
+		// in real life the katana_l_finger_joint has to be removed only
+		if(jointPositions.size() == 7)
+		{
+			jointPositions.pop_back();
+		}
 
-	if(jointNames.size() > 5)
-	{
-		jointNames.pop_back();
+		if(jointNames.size() == 7)
+		{
+			jointNames.pop_back();
+		}
 	}
 
 	return jointNames;
@@ -258,8 +261,8 @@ void moveRobotToHomePos()
 	moveClient.waitForServer();
 
 	katana_msgs::JointMovementGoal moveGoal;
-	moveGoal.jointGoal.name = getJointNames(true);
-
+	moveGoal.jointGoal.name = getJointNames(inSimulationGlob);
+	moveGoal.jointGoal.name.resize(5);
 	moveGoal.jointGoal.position.resize(5);
 	moveGoal.jointGoal.position.at(0) = 0;			// katana_motor1_pan_joint
 	moveGoal.jointGoal.position.at(1) = 2.1131;		// katana_motor2_lift_joint
@@ -453,7 +456,8 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 									objects.at(objIdx).set_coordinates(positions);
 
 									// before the trajectory started the recalculation does not have to triggered
-									if(!trajectoryStartTime.isZero())
+									if(!trajectoryStartTime.isZero()
+											&& getCurrentStepNo() < (currentTrajectory->at(0).size() - 5))
 									{
 										// trigger recalculation
 										movedObjectId = (int)objIdx;
