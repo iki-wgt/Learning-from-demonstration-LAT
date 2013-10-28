@@ -98,25 +98,31 @@ std::vector<std::string> getJointNames(bool inSimulation)
 
 	if(inSimulation)
 	{
-		gripperJointNames.clear();
-		gripperJointPositions.clear();
-
 		if(jointNames.size() < 2)
 		{
 			ROS_ERROR("not enough joint names!");
 		}
 
 		// copy the gripper names and joint positions
-		gripperJointNames.push_back(jointNames.at(jointNames.size() - 2));
-		gripperJointNames.push_back(jointNames.at(jointNames.size() - 1));
+		if(gripperJointNames.empty() && jointNames.size() == 7)
+		{
+			gripperJointNames.push_back(jointNames.at(jointNames.size() - 2));
+			gripperJointNames.push_back(jointNames.at(jointNames.size() - 1));
+		}
 
-		gripperJointPositions.push_back(
-			jointPositions.at(jointPositions.size() - 2)
-		);
+		if(jointPositions.size() == 7)
+		{
+			ROS_INFO("Setting gripper joint position");
+			gripperJointPositions.clear();
 
-		gripperJointPositions.push_back(
-			jointPositions.at(jointPositions.size() - 1)
-		);
+			gripperJointPositions.push_back(
+				jointPositions.at(jointPositions.size() - 2)
+			);
+
+			gripperJointPositions.push_back(
+				jointPositions.at(jointPositions.size() - 1)
+			);
+		}
 
 		// in Gazebo both finger joints
 		if(jointNames.size() == 7)
@@ -661,14 +667,15 @@ pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std
 {
 	pr2_controllers_msgs::JointTrajectoryGoal gripperGoal;
 
-	gripperGoal.trajectory.joint_names = gripperJointNames;
+	gripperGoal.trajectory.joint_names.push_back("katana_r_finger_joint");
+	gripperGoal.trajectory.joint_names.push_back("katana_l_finger_joint");// = gripperJointNames;
 	gripperGoal.trajectory.points.resize(trajectory[0].size());
-
+	//ROS_INFO("gripperJointNames size: %zu, %s, %s", gripperJointNames.size(), gripperJointNames.at(0).c_str(), gripperJointNames.at(0).c_str());
 	// copy the waypoints
 	for (unsigned int pointNo = 0; pointNo < trajectory[0].size(); ++pointNo)
 	{
 		gripperGoal.trajectory.points.at(pointNo).positions.resize(GRIPPER_JOINT_COUNT);
-		//gripperGoal.trajectory.points.at(pointNo).velocities.resize(GRIPPER_JOINT_COUNT);
+		gripperGoal.trajectory.points.at(pointNo).velocities.resize(GRIPPER_JOINT_COUNT);// NEEDED! Gazebo crashes w/o
 
 		gripperGoal.trajectory.points.at(pointNo).time_from_start =
 			ros::Duration(1.0 / REPRODUCE_HZ * pointNo + (TIME_FROM_START));
