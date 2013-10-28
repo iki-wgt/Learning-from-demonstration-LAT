@@ -42,6 +42,8 @@ std::deque<std::deque<double> >* currentTrajectory = NULL;
 // getCurrentStepNo stores here current step. Should grow linearly. Only recalculations are exceptions.
 unsigned int recentStep = 0;
 
+bool inSimulationGlob = false;
+
 std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir)
 {
 	std::string filename;
@@ -90,7 +92,7 @@ std::vector<std::string> getJointNames(bool inSimulation)
 {
 	while(jointNames.empty() || jointPositions.empty())
 	{
-		ros::Duration(0.0001).sleep();
+		ros::Duration(0.001).sleep();
 		ros::spinOnce();
 	}
 
@@ -117,17 +119,24 @@ std::vector<std::string> getJointNames(bool inSimulation)
 		);
 
 		// in Gazebo both finger joints
-		jointNames.pop_back();
-		jointPositions.pop_back();
+		if(jointNames.size() == 7)
+		{
+			jointNames.pop_back();
+		}
+
+		if(jointPositions.size() == 7)
+		{
+			jointPositions.pop_back();
+		}
 	}
 
 	// in real life the katana_l_finger_joint has to be removed only
-	if(jointPositions.size() == 7)
+	if(jointPositions.size() > 5)
 	{
 		jointPositions.pop_back();
 	}
 
-	if(jointNames.size() == 7)
+	if(jointNames.size() > 5)
 	{
 		jointNames.pop_back();
 	}
@@ -142,11 +151,8 @@ void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
 	//ROS_INFO("In joint state callback");
 	jointPositions = jointState->position;
-	if(jointNames.empty())
-	{
-		jointNames = jointState->name;
+	jointNames = jointState->name;
 		//ROS_INFO("Copied joint names");
-	}
 }
 
 void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool inSimulation)
@@ -486,7 +492,7 @@ unsigned int getCurrentStepNo()
 		return currentStepNo;
 	}
 
-	getJointNames(false);		// fetch the real joint positions
+	getJointNames(inSimulationGlob);		// fetch the real joint positions
 
 	double minimumDelta = INFINITY;
 	unsigned int minimumStep = 0;
@@ -502,12 +508,18 @@ unsigned int getCurrentStepNo()
 	{
 
 		double delta = 0;
-		for(unsigned int joint = 0; joint < (currentTrajectory->size() - 1); ++joint)
+		for(unsigned int joint = 0; joint < jointPositions.size(); ++joint)
 		// getJointNames removes one finger joint
 		{
 			double current = currentTrajectory->at(joint).at(step);
 			double real = jointPositions.at(joint);
 			delta += fabs(current - real);
+		}
+
+		if(inSimulationGlob)
+		{
+			delta += fabs(currentTrajectory->at(5).at(step) - gripperJointPositions.at(0));
+			delta += fabs(currentTrajectory->at(6).at(step) - gripperJointPositions.at(1));
 		}
 
 		if(delta < minimumDelta)
@@ -656,7 +668,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createGripperGoal(const std::deque<std
 	for (unsigned int pointNo = 0; pointNo < trajectory[0].size(); ++pointNo)
 	{
 		gripperGoal.trajectory.points.at(pointNo).positions.resize(GRIPPER_JOINT_COUNT);
-		gripperGoal.trajectory.points.at(pointNo).velocities.resize(GRIPPER_JOINT_COUNT);
+		//gripperGoal.trajectory.points.at(pointNo).velocities.resize(GRIPPER_JOINT_COUNT);
 
 		gripperGoal.trajectory.points.at(pointNo).time_from_start =
 			ros::Duration(1.0 / REPRODUCE_HZ * pointNo + (TIME_FROM_START));
@@ -1069,6 +1081,7 @@ int main(int argc, char **argv)
 
 			trajClient.waitForServer();
 			inSimulation = gripperClient.waitForServer(ros::Duration(0.01));
+			inSimulationGlob = inSimulation;
 			ROS_INFO("Action client ready.");
 
 			pr2_controllers_msgs::JointTrajectoryGoal goal = createGoal(reproducedTrajectory, inSimulation);
