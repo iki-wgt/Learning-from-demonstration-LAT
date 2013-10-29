@@ -446,8 +446,15 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 										&& !objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
 									)
 								{
-									ROS_INFO("Object %s moved %fm to (%f/%f/%f)", obj.get_name().c_str(), movedDistance,
-											pointStampedOut.point.x, pointStampedOut.point.y, pointStampedOut.point.z);
+									if(trajectoryStartTime.isZero())
+										ROS_INFO("start time is zero");
+									if(!objectUnderConstraint(objIdx, getCurrentStepNo(), constraints))
+										ROS_INFO("not under constraint");
+									if(!objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
+										ROS_INFO("not after constraint");
+									ROS_INFO("Object %s moved %fm to (%f/%f/%f) step: %u", obj.get_name().c_str(), movedDistance,
+											pointStampedOut.point.x, pointStampedOut.point.y, pointStampedOut.point.z,
+											getCurrentStepNo());
 
 									std::deque<double> positions;
 									positions.push_back(pointStampedOut.point.x);
@@ -542,7 +549,7 @@ unsigned int getCurrentStepNo()
 	currentStepNo = minimumStep;
 	recentStep = currentStepNo;
 
-	//ROS_INFO("Current step no: %u", currentStepNo);
+	ROS_INFO("Current step no: %u", currentStepNo);
 	return currentStepNo;
 }
 
@@ -550,14 +557,14 @@ bool objectUnderConstraint(int objectId, unsigned int step, const std::deque<int
 {
 	ROS_ASSERT_MSG(constraints.size() > 1, "objectUnderConstraint called with empty constraints");
 	ROS_ASSERT_MSG(objectId >= 0, "only objectIds >= 0 are valid");
-
+	ROS_INFO("constraints size: %zu, step: %u", constraints.size(), step * THINNING_FACTOR);
 	bool underConstraint = false;
-	if(step >= constraints.size())
+	if((step * THINNING_FACTOR) >= constraints.size())	// TODO get constraints directly in right size
 	{
 		ROS_WARN("Step is greater than constraints size in objectUnderConstraint. Returning false.");
 		return false;
 	}
-	if(constraints.at(step) == objectId)
+	if(constraints.at(step * THINNING_FACTOR) == objectId)
 	{
 		underConstraint = true;
 	}
@@ -572,11 +579,13 @@ bool objectAfterConstraint(int objectId, unsigned int step, const std::deque<int
 
 	bool afterConstraint = false;
 
-	if(step > constraints.size())
+	if((step * THINNING_FACTOR) > constraints.size())
 	{
 		ROS_WARN("Step is greater than constraint size.");
 		step = constraints.size();
 	}
+
+	step *= THINNING_FACTOR;
 
 	for (unsigned int currentStep = 1; currentStep <= step; ++currentStep)
 	{
