@@ -44,6 +44,8 @@ unsigned int recentStep = 0;
 
 bool inSimulationGlob = false;
 
+tf::TransformListener* tfListenerPtr;
+
 std::vector<std::string> getAvailableTrajectories(std::string trajectoryDir)
 {
 	std::string filename;
@@ -158,10 +160,10 @@ std::vector<std::string> getJointNames(bool inSimulation)
 
 void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState)
 {
-	//ROS_INFO("In joint state callback");
+	//ROS_INFO("In joint state callback seq: %u", jointState->header.seq);
+
 	jointPositions = jointState->position;
 	jointNames = jointState->name;
-		//ROS_INFO("Copied joint names");
 }
 
 void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool inSimulation)
@@ -358,8 +360,6 @@ bool isObjectStored(const std::string objName)
 
 void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 {
-	tf::TransformListener tfListener;
-
 	for (unsigned int markerIdx = 0; markerIdx < markers->markers.size(); ++markerIdx)
 	{
 		ar_track_alvar::AlvarMarker marker = markers->markers.at(markerIdx);
@@ -370,11 +370,12 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 			pointStampedIn.point = marker.pose.pose.position;
 			pointStampedIn.header.frame_id = marker.header.frame_id;
 
-			ros::Duration waitTimeout(3.0);
-			tfListener.waitForTransform(OBJECT_TARGET_FRAME, pointStampedIn.header.frame_id,
-					pointStampedIn.header.stamp, waitTimeout);
-			tfListener.transformPoint(OBJECT_TARGET_FRAME, pointStampedIn, pointStampedOut);
+			ros::Duration waitTimeout(1.0);
 
+			tfListenerPtr->waitForTransform(OBJECT_TARGET_FRAME, pointStampedIn.header.frame_id,
+					pointStampedIn.header.stamp, waitTimeout);
+
+			tfListenerPtr->transformPoint(OBJECT_TARGET_FRAME, pointStampedIn, pointStampedOut);
 			if(isObjectReachable(pointStampedOut))
 			{
 				if(!allObjectsFound)
@@ -497,6 +498,7 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 			} // end of if(isObjectReachable(pointStampedOut))
 		}
 	}	// end of for loop
+
 }
 
 unsigned int getCurrentStepNo()
@@ -775,7 +777,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 						jointPositions.at(joint) * (1 - TRANSITION_ARRAY[transitionStep])
 						+ newTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE)
 							* TRANSITION_ARRAY[transitionStep];	// hier out of range
-					ROS_INFO("joint %u: %f", joint, goal.trajectory.points.at(transitionStep).positions.at(joint));
+					ROS_INFO("joint %u: %f, current: %f", joint, goal.trajectory.points.at(transitionStep).positions.at(joint), jointPositions.at(joint));
 				}
 
 				goal.trajectory.points.at(transitionStep).time_from_start =
@@ -1047,6 +1049,8 @@ int main(int argc, char **argv)
 	{
 		ROS_INFO("Trajectory name known.");
 
+		tfListenerPtr = new tf::TransformListener();
+
 		// subscribe to the topics
 		ros::Subscriber jointStateListener = nodeHandle.subscribe("joint_states",
 				1,
@@ -1127,6 +1131,7 @@ int main(int argc, char **argv)
 			}
 
 			std::deque<std::deque<double> > newTrajectory;
+			ros::Rate rate(25.0);
 
 			while(!trajClient.getState().isDone() && ros::ok())
 			{
@@ -1161,8 +1166,8 @@ int main(int argc, char **argv)
 					else
 					{
 						trajClient.cancelAllGoals();
-						ros::spinOnce();
 						ros::Time::sleepUntil(ros::Time::now() + ros::Duration(POINTS_IN_FUTURE / REPRODUCE_HZ));
+						ros::spinOnce();
 						pr2_controllers_msgs::JointTrajectoryGoal updatedGoal =
 								createUpdatedGoal(newTrajectory, reproducedTrajectory, inSimulation);
 
@@ -1173,7 +1178,8 @@ int main(int argc, char **argv)
 					}
 				}
 				//ROS_INFO_THROTTLE(0.05, "step: %u", getCurrentStepNo());
-				ros::Duration(0.001).sleep();
+				//ros::Duration(0.001).sleep();
+				rate.sleep();
 				ros::spinOnce();
 			}
 
@@ -1217,6 +1223,6 @@ int main(int argc, char **argv)
 	{
 		ROS_WARN("Trajectory name unknown!");
 	}
-
+	delete tfListenerPtr;
 	return EXIT_SUCCESS;
 }
