@@ -10,6 +10,7 @@ std::deque<object> objects;
 std::vector<std::string> jointNames;
 std::vector<std::string> gripperJointNames;
 std::vector<double> jointPositions;			// updated constantly by jointStateCallback
+std::vector<double> jointVelocities;
 std::vector<double> gripperJointPositions;
 bool allObjectsFound = false;
 lfd lfd;
@@ -164,6 +165,7 @@ void jointStateCallback(const sensor_msgs::JointStateConstPtr& jointState)
 
 	jointPositions = jointState->position;
 	jointNames = jointState->name;
+	jointVelocities = jointState->velocity;
 }
 
 void moveRobotToStartPos(const std::deque<std::deque<double> >& trajectory, bool inSimulation)
@@ -447,12 +449,6 @@ void objectTrackerCallback(const ar_track_alvar::AlvarMarkersConstPtr& markers)
 										&& !objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
 									)
 								{
-									if(trajectoryStartTime.isZero())
-										ROS_INFO("start time is zero");
-									if(!objectUnderConstraint(objIdx, getCurrentStepNo(), constraints))
-										ROS_INFO("not under constraint");
-									if(!objectAfterConstraint(objIdx, getCurrentStepNo(), constraints))
-										ROS_INFO("not after constraint");
 									ROS_INFO("Object %s moved %fm to (%f/%f/%f) step: %u", obj.get_name().c_str(), movedDistance,
 											pointStampedOut.point.x, pointStampedOut.point.y, pointStampedOut.point.z,
 											getCurrentStepNo());
@@ -551,7 +547,7 @@ unsigned int getCurrentStepNo()
 	currentStepNo = minimumStep;
 	recentStep = currentStepNo;
 
-	ROS_INFO("Current step no: %u", currentStepNo);
+	//ROS_INFO("Current step no: %u", currentStepNo);
 	return currentStepNo;
 }
 
@@ -755,9 +751,9 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		newTrajectorySize += 4; 	// 4 points are added for the transition between old and new trajectory
 
 		goal.trajectory.points.resize(newTrajectorySize);
-
+		ros::spinOnce();
 		// transition between old and new trajectory
-		for (int transitionStep = 0; transitionStep < 4; ++transitionStep)
+		for (unsigned int transitionStep = 0; transitionStep < TRANSITION_POINT_COUNT; ++transitionStep)
 		{
 			goal.trajectory.points.at(transitionStep).positions.resize(armJointCount);
 
@@ -776,7 +772,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 					goal.trajectory.points.at(transitionStep).positions.at(joint) =
 						jointPositions.at(joint) * (1 - TRANSITION_ARRAY[transitionStep])
 						+ newTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE)
-							* TRANSITION_ARRAY[transitionStep];	// hier out of range
+							* TRANSITION_ARRAY[transitionStep];
 					ROS_INFO("joint %u: %f, current: %f", joint, goal.trajectory.points.at(transitionStep).positions.at(joint), jointPositions.at(joint));
 				}
 
@@ -786,7 +782,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		}
 
 		// copy the waypoints
-		for (unsigned int step = 4; step < goal.trajectory.points.size(); ++step)
+		for (unsigned int step = TRANSITION_POINT_COUNT; step < goal.trajectory.points.size(); ++step)
 		{
 			goal.trajectory.points.at(step).positions.resize(armJointCount);
 
@@ -798,10 +794,14 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 						newTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE + step - 4);
 
 				goal.trajectory.points.at(step).time_from_start = ros::Duration(1.0 / REPRODUCE_HZ * step);
+				//ROS_INFO("joint %u: %f", joint, goal.trajectory.points.at(step).positions.at(joint));
 			}
 		}
-
-		goal.trajectory.header.stamp = ros::Time::now() + ros::Duration( POINTS_IN_FUTURE / REPRODUCE_HZ);
+		for(unsigned int i = 0; i < 6; ++i)
+		{
+			ROS_INFO("Joint: %u: %f", i, goal.trajectory.points[0].positions[i]);
+		}
+		goal.trajectory.header.stamp = ros::Time::now()/* + ros::Duration( POINTS_IN_FUTURE / REPRODUCE_HZ)*/;
 		ROS_INFO("Trajectory should start at %f", goal.trajectory.header.stamp.toSec());
 	}
 	else
@@ -977,6 +977,31 @@ double getMaximumDistance(
 		}
 	}
 	return maximumDistance;
+}
+
+void waitTillRobotStoped()
+{
+	bool moving = false;
+
+	while(moving && ros::ok())
+	{
+		double velSum = 0.0;
+		for(unsigned int joint = 0; joint < jointVelocities.size(); ++joint)
+		{
+			velSum += jointVelocities.at(joint);
+		}
+
+		if(velSum < 0.005)
+		{
+			moving = true;
+		}
+		else
+		{
+			velSum = 0.0;
+		}
+
+		ros::spinOnce();
+	}
 }
 
 int main(int argc, char **argv)
@@ -1165,12 +1190,23 @@ int main(int argc, char **argv)
 					}
 					else
 					{
-						trajClient.cancelAllGoals();
 						ros::Time::sleepUntil(ros::Time::now() + ros::Duration(POINTS_IN_FUTURE / REPRODUCE_HZ));
+						trajClient.cancelGoal();
+
+						while(trajClient.getState() == trajClient.getState().ACTIVE)
+						{
+							ros::spinOnce();
+							ros::Duration(0.001).sleep();
+						}
+						//ros::Duration(0.2).sleep();
+						waitTillRobotStoped();
 						ros::spinOnce();
 						pr2_controllers_msgs::JointTrajectoryGoal updatedGoal =
 								createUpdatedGoal(newTrajectory, reproducedTrajectory, inSimulation);
-
+						for(unsigned int i = 0; i < 6; ++i)
+						{
+							ROS_INFO("Joint: %u: %f", i, updatedGoal.trajectory.points[0].positions[i]);
+						}
 						//ros::Time::sleepUntil(updatedGoal.trajectory.header.stamp - ros::Duration(0.2));
 
 						ROS_INFO("Sending now updated goal");

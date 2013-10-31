@@ -195,6 +195,11 @@ double getMaximumDistance(
 		unsigned int endStep
 		);
 
+/**
+ * Block till the robots velocity is zero.
+ */
+void waitTillRobotStoped();
+
 int main(int argc, char **argv);
 
 #endif /* LAT_REPRODUCER_H_ */
