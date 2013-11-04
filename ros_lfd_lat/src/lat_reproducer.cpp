@@ -626,6 +626,9 @@ unsigned int getStepsTillConstraint(int objectId, unsigned int startStep, const 
 		++steps;
 	}
 
+	// sample the steps down
+	steps /= THINNING_FACTOR;
+
 	return steps;
 }
 
@@ -988,7 +991,7 @@ void waitTillRobotStoped()
 		double velSum = 0.0;
 		for(unsigned int joint = 0; joint < jointVelocities.size(); ++joint)
 		{
-			velSum += jointVelocities.at(joint);
+			velSum += fabs(jointVelocities.at(joint));
 		}
 
 		if(velSum < 0.005)
@@ -1085,7 +1088,7 @@ int main(int argc, char **argv)
 		moveRobotToHomePos();
 
 		ROS_INFO("Waiting till all mandatory objects are found");
-		while(!allObjectsFound)
+		while(!allObjectsFound && ros::ok())
 		{
 			ros::Duration(0.05).sleep();
 			ros::spinOnce();
