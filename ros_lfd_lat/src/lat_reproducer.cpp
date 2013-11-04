@@ -40,7 +40,7 @@ geometry_msgs::PointStamped* newObjectPosition = NULL;
 // Points to the trajectory that the robot is performing at the moment.
 std::deque<std::deque<double> >* currentTrajectory = NULL;
 
-// getCurrentStepNo stores here current step. Should grow linearly. Only recalculations are exceptions.
+// getCurrentStepNo stores here current step. Should grow monotonically. Only recalculations are exceptions.
 unsigned int recentStep = 0;
 
 bool inSimulationGlob = false;
@@ -541,6 +541,15 @@ unsigned int getCurrentStepNo()
 		{
 			minimumDelta = delta;
 			minimumStep = step;
+		}
+
+		// avoid jumping to points in future
+		ros::Duration duration = ros::Time::now() - trajectoryStartTime;
+		unsigned int estimatedStep = static_cast<unsigned int>(duration.toSec() * REPRODUCE_HZ * 1.2);
+		// add 20% tolerance
+		if(step > estimatedStep)
+		{
+			break;
 		}
 	}
 
