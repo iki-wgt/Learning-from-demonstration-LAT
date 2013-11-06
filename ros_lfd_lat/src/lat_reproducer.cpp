@@ -742,19 +742,18 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 
 	unsigned int currentStep = getCurrentStepNo();
 
-	unsigned int currentStepThinned = currentStep /*/ THINNING_FACTOR*/;
 	unsigned int stepsTillConstraint = getStepsTillConstraint(movedObjectId, currentStep, constraints);
 
 	ROS_INFO("createUpdatedGoal called. CurrentStep: %u stepsTillConstraint: %u", currentStep, stepsTillConstraint);
 
-	if(oldTrajectory[0].size() < currentStepThinned)
+	if(oldTrajectory[0].size() < currentStep)
 	{
 		ROS_WARN("The trajectory has ended already!");
 		return goal;
 	}
 
-	unsigned int newTrajectorySize = oldTrajectory[0].size() - currentStepThinned;
-	ROS_INFO("newTrajectorySize: %u, currentStepThinned: %u, oldSize: %zu", newTrajectorySize, currentStepThinned, oldTrajectory[0].size());
+	unsigned int newTrajectorySize = oldTrajectory[0].size() - currentStep;
+	ROS_INFO("newTrajectorySize: %u, currentStep: %u, oldSize: %zu", newTrajectorySize, currentStep, oldTrajectory[0].size());
 	if(stepsTillConstraint >= POINTS_IN_FUTURE)
 	{
 		ROS_INFO("insert new trajectory after %u steps", POINTS_IN_FUTURE);
@@ -774,18 +773,18 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 				if(inSimulation)
 				{
 					goal.trajectory.points.at(transitionStep).positions.at(joint) =
-						oldTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE)
+						oldTrajectory.at(joint).at(currentStep + POINTS_IN_FUTURE)
 							* (1 - TRANSITION_ARRAY[transitionStep])
-						+ newTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE)
+						+ newTrajectory.at(joint).at(currentStep + POINTS_IN_FUTURE)
 							* TRANSITION_ARRAY[transitionStep];
 				}
 				else
 				{
 					goal.trajectory.points.at(transitionStep).positions.at(joint) =
 						jointPositions.at(joint) * (1 - TRANSITION_ARRAY[transitionStep])
-						+ newTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE)
+						+ newTrajectory.at(joint).at(currentStep + POINTS_IN_FUTURE)
 							* TRANSITION_ARRAY[transitionStep];
-					ROS_INFO("joint %u: %f, current: %f", joint, goal.trajectory.points.at(transitionStep).positions.at(joint), jointPositions.at(joint));
+					//ROS_INFO("joint %u: %f, current: %f", joint, goal.trajectory.points.at(transitionStep).positions.at(joint), jointPositions.at(joint));
 				}
 
 				goal.trajectory.points.at(transitionStep).time_from_start =
@@ -794,25 +793,25 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		}
 
 		// copy the waypoints
-		for (unsigned int step = TRANSITION_POINT_COUNT; step < goal.trajectory.points.size(); ++step)
+		for (unsigned int step = TRANSITION_POINT_COUNT; step < goal.trajectory.points.size();	++step)
 		{
 			goal.trajectory.points.at(step).positions.resize(armJointCount);
 
 			for (unsigned int joint = 0; joint < goal.trajectory.points.at(step).positions.size(); ++joint)
 			{
-				//ROS_INFO("step: %u, joint: %u, newTraIdx: %u",
-				//		step, joint, currentStepThinned + POINTS_IN_FUTURE + step - TRANSITION_POINT_COUNT);
+				//ROS_INFO("step: %u, joint: %u, newTraIdx: %u, newTraJoint: %zu",
+				//		step, joint, currentStep + POINTS_IN_FUTURE + step, newTrajectory.size());
 				goal.trajectory.points.at(step).positions.at(joint) =
-					newTrajectory.at(joint).at(currentStepThinned + POINTS_IN_FUTURE + step - TRANSITION_POINT_COUNT);
+					newTrajectory.at(joint).at(currentStep + POINTS_IN_FUTURE + step - TRANSITION_POINT_COUNT);
 
 				goal.trajectory.points.at(step).time_from_start = ros::Duration(1.0 / REPRODUCE_HZ * step);
 				//ROS_INFO("joint %u: %f", joint, goal.trajectory.points.at(step).positions.at(joint));
 			}
 		}
-		for(unsigned int i = 0; i < 6; ++i)
+		/*for(unsigned int i = 0; i < 6; ++i)
 		{
 			ROS_INFO("Joint: %u: %f", i, goal.trajectory.points[0].positions[i]);
-		}
+		}*/
 		goal.trajectory.header.stamp = ros::Time::now()/* + ros::Duration( POINTS_IN_FUTURE / REPRODUCE_HZ)*/;
 		ROS_INFO("Trajectory should start at %f", goal.trajectory.header.stamp.toSec());
 	}
@@ -822,35 +821,48 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 		// insert immediately
 		newTrajectorySize += TRANSITION_POINT_COUNT; 	// TRANSITION_POINT_COUNT points are added for the
 														// transition between old and new trajectory
-
+		const unsigned int POINTS_IN_PAST = 5;
+		newTrajectorySize += POINTS_IN_PAST;
+		//ROS_INFO("goal size: %u", newTrajectorySize);
 		goal.trajectory.points.resize(newTrajectorySize);
 
 		// transition between old and new trajectory
 		// same as above except POINTS_IN_FUTURE is missing
-		for (int transitionStep = 0; transitionStep < TRANSITION_POINT_COUNT; ++transitionStep)
+		for (unsigned int transitionStep = 0; transitionStep < TRANSITION_POINT_COUNT; ++transitionStep)
 		{
 			goal.trajectory.points.at(transitionStep).positions.resize(armJointCount);
 
 			for (unsigned int joint = 0; joint < goal.trajectory.points.at(transitionStep).positions.size(); ++joint)
 			{
-				goal.trajectory.points.at(transitionStep).positions.at(joint) =
-					oldTrajectory.at(joint).at(currentStepThinned) * (1 - TRANSITION_ARRAY[transitionStep])
-					+ newTrajectory.at(joint).at(currentStepThinned) * TRANSITION_ARRAY[transitionStep];
-
+				if(inSimulation)
+				{
+					goal.trajectory.points.at(transitionStep).positions.at(joint) =
+						oldTrajectory.at(joint).at(currentStep - POINTS_IN_PAST)
+							* (1 - TRANSITION_ARRAY[transitionStep])
+						+ newTrajectory.at(joint).at(currentStep - POINTS_IN_PAST)
+							* TRANSITION_ARRAY[transitionStep];
+				}
+				else
+				{
+					goal.trajectory.points.at(transitionStep).positions.at(joint) =
+						jointPositions.at(joint) * (1 - TRANSITION_ARRAY[transitionStep])
+						+ newTrajectory.at(joint).at(currentStep - POINTS_IN_PAST)
+							* TRANSITION_ARRAY[transitionStep];
+				}
 				goal.trajectory.points.at(transitionStep).time_from_start =
-												ros::Duration(1.0 / REPRODUCE_HZ * transitionStep);
+													ros::Duration(1.0 / REPRODUCE_HZ * transitionStep);
 			}
 		}
-
+		//ROS_INFO("newTrajectory size %zu", newTrajectory.at(0).size());
 		// copy the waypoints
 		for (unsigned int step = TRANSITION_POINT_COUNT; step < goal.trajectory.points.size(); ++step)
 		{
 			goal.trajectory.points.at(step).positions.resize(armJointCount);
-
+			//ROS_INFO("step: %u, currentStep: %u, %u", step, currentStep, currentStep + step - POINTS_IN_PAST - TRANSITION_POINT_COUNT);
 			for (unsigned int joint = 0; joint < goal.trajectory.points.at(step).positions.size(); ++joint)
 			{
 				goal.trajectory.points.at(step).positions.at(joint) =
-						newTrajectory.at(joint).at(currentStepThinned + step - TRANSITION_POINT_COUNT);
+						newTrajectory.at(joint).at(currentStep + step - POINTS_IN_PAST - TRANSITION_POINT_COUNT);
 
 				goal.trajectory.points.at(step).time_from_start = ros::Duration(1.0 / REPRODUCE_HZ * step);
 			}
