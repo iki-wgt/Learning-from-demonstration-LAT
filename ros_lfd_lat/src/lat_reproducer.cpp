@@ -664,14 +664,26 @@ pr2_controllers_msgs::JointTrajectoryGoal createGoal(
 		armJointCount = 6;
 	}
 
+	goal.trajectory.points.at(0).
+		positions.resize(armJointCount);
+
+	goal.trajectory.points.at(0).time_from_start =
+			ros::Duration(1.0 / REPRODUCE_HZ * 0 * SLOW_DOWN_FACTOR + (TIME_FROM_START));
+
+	for (unsigned int jointNo = 0; jointNo < armJointCount; ++jointNo)
+	{
+		goal.trajectory.points.at(0).positions.at(jointNo) =
+				trajectory.at(jointNo).at(0);
+	}
+
 	// copy the waypoints
-	for (unsigned int pointNo = 0; pointNo < trajectory[0].size(); ++pointNo)
+	for (unsigned int pointNo = 1; pointNo < trajectory[0].size(); ++pointNo)
 	{
 		goal.trajectory.points.at(pointNo).
 			positions.resize(armJointCount);
 
 		goal.trajectory.points.at(pointNo).time_from_start =
-				ros::Duration(1.0 / REPRODUCE_HZ * pointNo * SLOW_DOWN_FACTOR + (TIME_FROM_START));
+				ros::Duration(1.0 / REPRODUCE_HZ * (pointNo + 1) * SLOW_DOWN_FACTOR + (TIME_FROM_START));
 
 		for (unsigned int jointNo = 0; jointNo < armJointCount; ++jointNo)
 		{
