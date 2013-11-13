@@ -20,7 +20,7 @@ bool isObjectReachable(const geometry_msgs::PointStamped& objectLocation)
 {	// TODO use something like inverse kinematics to do this
 	bool reachable = true;
 	const double Z_OFFSET = 0.22;		// katana specific
-	const double Z_MINIMUM = -0.3;
+	const double Z_MINIMUM = -0.35;
 
 	if(objectLocation.header.frame_id != OBJECT_TARGET_FRAME)
 	{

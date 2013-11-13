@@ -8,7 +8,11 @@
  *      a warping in task space.
  */
 std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< trajectory_lat > JS){ 
- 
+  if(JS.size() == 1)
+  {
+	  // no warping required
+	  return JS;
+  }
   // Create a list of trajectories in task space
   std::deque< trajectory_lat > TS( JS.begin(), JS.end());
   for(unsigned int i=0; i < TS.size(); i++){
@@ -187,7 +191,7 @@ std::deque< trajectory_lat > warp_leatra::warp_in_task_space(std::deque< traject
       //std::cout<< "path number " << i+t+1 << " from W[" << t << "][" << i << "]" << " size = " << W[t][i].get_path_y().size() << std::endl;
     }
   }
-   
+
   // apply warping path to all trajectories in JS
   
   for(unsigned int i=0; i < JS.size(); i++){

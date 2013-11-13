@@ -256,16 +256,20 @@ ndmapSetGroup approximation::make_model(std::deque< trajectory_lat > trajectorie
   ndmapSetGroup group, tmp;
 
   int tra_num = trajectories.size();
-
-  if(tra_num <= 0) return group;                                // If the deque parameter is empty
+  ROS_INFO("tra_num %d", tra_num);
+  if(tra_num <= 0)
+  {
+	  ROS_ERROR("Deque parameter is empty!");
+	  return group;                                // If the deque parameter is empty
+  }
   int obj_num = trajectories[0].get_num_of_objects();           // The amount of objects, carried by each trajectory need to be equal
 
   for(int i=0; i < tra_num; i++){
-    if(trajectories[i].get_num_of_objects() != obj_num) return group;
+    if(trajectories.at(i).get_num_of_objects() != obj_num) return group;
   }
 
   for(int i=0; i < tra_num; i++){                               // calculating the distance, between trajectory and object.
-    tmp.add_ndmapSet(trajectories[i].return_distance());
+    tmp.add_ndmapSet(trajectories.at(i).return_distance());
   }
 
   for(int i=0; i < obj_num; i++){
@@ -745,7 +749,7 @@ int ndmap::map_is_consistent(){
 }
 
 std::deque< double > ndmap::get_row(unsigned int row){
-  if(map.size() > row) return map[row];
+  if(map.size() > row) return map.at(row);
   else{
       std::deque< double > err;
       return err;
@@ -1277,15 +1281,17 @@ std::deque< bool > ndmapSet::getConstraints(double threshold)
 
 	if(get_num_of_maps() != 4)
 	{
-		ROS_ERROR("ndmapSet has no std_dev map!");
-		throw data_error("ndmapSet has no std_dev map", -99);
+		//ROS_ERROR("ndmapSet has no std_dev map!");
+		//throw data_error("ndmapSet has no std_dev map", -99);
+		constraints.resize(set.at(0).get_row(1).size(), false);
+		return constraints;
 	}
 
-	unsigned int dimWithMaxDev = set[STD_DEV_DIM].getDimWithMaxDev();
+	unsigned int dimWithMaxDev = set.at(STD_DEV_DIM).getDimWithMaxDev();
 	std::deque<double> stdDevMap = set[STD_DEV_DIM].get_row(dimWithMaxDev);
 
 	double min, max;
-	set[STD_DEV_DIM].getMinMax(dimWithMaxDev, min, max);
+	set.at(STD_DEV_DIM).getMinMax(dimWithMaxDev, min, max);
 
 	double absoluteThreshold = threshold * max;
 
@@ -1499,24 +1505,27 @@ void ndmapSetGroup::add_offset( std::deque< object > obj){
  */
 std::deque<int> ndmapSetGroup::getConstraints(double threshold)
 {
-	std::deque<bool> constraintsBool = group[0].getConstraints(threshold);
+	std::deque<bool> constraintsBool = group.at(0).getConstraints(threshold);
 	std::deque<int> constraints = constraintDequeBoolToInt(constraintsBool, 0);
 
 	// check if constraints have been found
 	bool constraintsFound = false;
-
-	for (unsigned int groupIdx = 1; groupIdx < group.size(); ++groupIdx)
+	ROS_INFO("group size: %zu", group.size());
+	if(group.size() >= 1)
 	{
-		std::deque<int> constraintsTmp = constraintDequeBoolToInt(group[groupIdx].getConstraints(threshold), groupIdx);
-		ROS_ASSERT(constraints.size() == constraintsTmp.size());
-
-		// and disjugate both deques
-		for (unsigned int i = 0; i < constraints.size(); ++i)
+		for (unsigned int groupIdx = 1; groupIdx < group.size(); ++groupIdx)
 		{
-			if(constraintsTmp[i] > -1)
+			std::deque<int> constraintsTmp = constraintDequeBoolToInt(group.at(groupIdx).getConstraints(threshold), groupIdx);
+			ROS_ASSERT(constraints.size() == constraintsTmp.size());
+
+			// and disjugate both deques
+			for (unsigned int i = 0; i < constraints.size(); ++i)
 			{
-				constraints[i] = constraintsTmp[i];
-				constraintsFound = true;
+				if(constraintsTmp.at(i) > -1)
+				{
+					constraints[i] = constraintsTmp.at(i);
+					constraintsFound = true;
+				}
 			}
 		}
 	}
