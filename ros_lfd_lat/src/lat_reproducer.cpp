@@ -770,7 +770,6 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 	{
 		ROS_INFO("insert new trajectory after %u steps", POINTS_IN_FUTURE);
 		// insert new trajectory after POINTS_IN_FUTURE steps
-		newTrajectorySize -= POINTS_IN_FUTURE;	// the new trajectory starts after POINTS_IN_FUTURE steps
 		newTrajectorySize += TRANSITION_POINT_COUNT; 	// 4 points are added for the transition between old and new trajectory
 
 		goal.trajectory.points.resize(newTrajectorySize);
@@ -785,16 +784,16 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 				if(inSimulation)
 				{
 					goal.trajectory.points.at(transitionStep).positions.at(joint) =
-						oldTrajectory.at(joint).at(currentStep + POINTS_IN_FUTURE)
+						oldTrajectory.at(joint).at(currentStep)
 							* (1 - TRANSITION_ARRAY[transitionStep])
-						+ newTrajectory.at(joint).at(currentStep + POINTS_IN_FUTURE)
+						+ newTrajectory.at(joint).at(currentStep)
 							* TRANSITION_ARRAY[transitionStep];
 				}
 				else
 				{
 					goal.trajectory.points.at(transitionStep).positions.at(joint) =
 						jointPositions.at(joint) * (1 - TRANSITION_ARRAY[transitionStep])
-						+ newTrajectory.at(joint).at(currentStep + POINTS_IN_FUTURE)
+						+ newTrajectory.at(joint).at(currentStep)
 							* TRANSITION_ARRAY[transitionStep];
 					//ROS_INFO("joint %u: %f, current: %f", joint, goal.trajectory.points.at(transitionStep).positions.at(joint), jointPositions.at(joint));
 				}
@@ -814,7 +813,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 				//ROS_INFO("step: %u, joint: %u, newTraIdx: %u, newTraJoint: %zu",
 				//		step, joint, currentStep + POINTS_IN_FUTURE + step, newTrajectory.size());
 				goal.trajectory.points.at(step).positions.at(joint) =
-					newTrajectory.at(joint).at(currentStep + POINTS_IN_FUTURE + step - TRANSITION_POINT_COUNT);
+					newTrajectory.at(joint).at(currentStep + step - TRANSITION_POINT_COUNT);
 
 				goal.trajectory.points.at(step).time_from_start = ros::Duration(1.0 / REPRODUCE_HZ * step);
 				//ROS_INFO("joint %u: %f", joint, goal.trajectory.points.at(step).positions.at(joint));
@@ -829,7 +828,7 @@ pr2_controllers_msgs::JointTrajectoryGoal createUpdatedGoal(
 	}
 	else
 	{
-		ROS_INFO("Insert new trajectory immediately");
+		ROS_INFO("Insert new trajectory in the past");
 		// insert immediately
 		newTrajectorySize += TRANSITION_POINT_COUNT; 	// TRANSITION_POINT_COUNT points are added for the
 														// transition between old and new trajectory
